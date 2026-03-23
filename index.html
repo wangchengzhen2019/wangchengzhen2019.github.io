@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wang Chengzhen - AI 个人主页</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #e8f4f8 0%, #f0f8fb 100%);
+            color: #333;
+            line-height: 1.6;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+            padding: 40px;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 40px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #e3f2fd;
+        }
+
+        h1 {
+            color: #1976d2;
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+
+        .content {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 40px;
+        }
+
+        .profile-section {
+            flex: 1;
+            min-width: 300px;
+        }
+
+        .coconut-section {
+            flex: 1;
+            min-width: 300px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .ai-skills {
+            margin: 0;
+            background: #f5fafe;
+            padding: 20px;
+            border-radius: 10px;
+        }
+
+        h2 {
+            color: #0d47a1;
+            margin-bottom: 15px;
+            font-size: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        h2::before {
+            content: "";
+            display: inline-block;
+            width: 5px;
+            height: 20px;
+            background: #1976d2;
+            border-radius: 3px;
+        }
+
+        .skill-list {
+            list-style: none;
+            margin-top: 15px;
+        }
+
+        .skill-list li {
+            padding: 8px 0;
+            border-bottom: 1px dashed #e0e0e0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .skill-list li::before {
+            content: "•";
+            color: #1976d2;
+            font-size: 1.5rem;
+        }
+
+        footer {
+            text-align: center;
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 2px solid #e3f2fd;
+            color: #777;
+            font-size: 0.9rem;
+        }
+
+        /* 椰子SVG动画效果 */
+        #coconut-svg {
+            transition: transform 0.5s ease;
+        }
+
+        #coconut-svg:hover {
+            transform: scale(1.05) rotate(2deg);
+        }
+
+        .coconut-title {
+            text-align: center;
+            color: #2e7d32;
+            margin-bottom: 15px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Wang Chengzhen</h1>
+            <!-- 已移除副标题：AI 领域探索者 & 技术实践者 -->
+        </header>
+
+        <div class="content">
+            <div class="profile-section">
+                <div class="ai-skills">
+                    <h2>AI 核心技能</h2>
+                    <ul class="skill-list">
+                        <li>机器学习算法（分类、回归、聚类）</li>
+                        <li>深度学习框架（TensorFlow/PyTorch）</li>
+                        <li>自然语言处理（NLP）与大语言模型</li>
+                        <li>计算机视觉（CV）应用开发</li>
+                        <li>AI 模型部署与优化</li>
+                        <li>数据挖掘与分析</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="coconut-section">
+                <div>
+                    <h3 class="coconut-title">🌴 椰子 (AI 灵感象征)</h3>
+                    <!-- SVG绘制椰子 -->
+                    <svg id="coconut-svg" width="300" height="350" viewBox="0 0 300 350">
+                        <!-- 椰子树树干 -->
+                        <rect x="145" y="100" width="10" height="200" fill="#8B4513" rx="5"/>
+                        <!-- 椰子树叶 -->
+                        <path d="M150 100 L80 40 L120 80 Z" fill="#2E7D32"/>
+                        <path d="M150 100 L220 40 L180 80 Z" fill="#2E7D32"/>
+                        <path d="M150 90 L70 70 L110 60 Z" fill="#388E3C"/>
+                        <path d="M150 90 L230 70 L190 60 Z" fill="#388E3C"/>
+                        <path d="M150 80 L60 90 L100 50 Z" fill="#4CAF50"/>
+                        <path d="M150 80 L240 90 L200 50 Z" fill="#4CAF50"/>
+                        <!-- 椰子果 -->
+                        <circle cx="150" cy="120" r="25" fill="#8D6E63"/>
+                        <circle cx="140" cy="115" r="5" fill="#3E2723"/>
+                        <circle cx="160" cy="118" r="4" fill="#3E2723"/>
+                        <circle cx="150" cy="130" r="6" fill="#3E2723"/>
+                        <!-- AI元素装饰 -->
+                        <text x="150" y="280" font-size="14" text-anchor="middle" fill="#1976d2">AI · Innovation</text>
+                        <path d="M120 300 L130 290 L180 290 L190 300 Z" fill="none" stroke="#1976d2" stroke-width="2"/>
+                        <path d="M135 285 L145 275 L155 275 L165 285 Z" fill="none" stroke="#1976d2" stroke-width="2"/>
+                    </svg>
+                </div>
+            </div>
+        </div>
+
+        <footer>
+            <p>Wang Chengzhen © 2026 | AI 驱动的个人主页</p>
+        </footer>
+    </div>
+
+    <script>
+        // 简单的交互效果：页面加载时椰子轻微摆动
+        window.addEventListener('load', () => {
+            const coconut = document.getElementById('coconut-svg');
+            coconut.style.transform = 'rotate(-1deg)';
+            setTimeout(() => {
+                coconut.style.transform = 'rotate(1deg)';
+                setTimeout(() => {
+                    coconut.style.transform = 'rotate(0deg)';
+                }, 300);
+            }, 300);
+        });
+    </script>
+</body>
+</html>
