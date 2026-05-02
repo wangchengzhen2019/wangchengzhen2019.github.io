@@ -1,0 +1,1402 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>星露谷物语简化版</title>
+    <!-- Tailwind CSS v3 -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome -->
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#4A7C59',
+                        secondary: '#8FBC8F',
+                        accent: '#FFD700',
+                        background: '#F5F5DC',
+                        text: '#333333',
+                        sky: '#87CEEB',
+                        cloud: '#FFFFFF',
+                        grass: '#7CFC00',
+                        dirt: '#8B4513',
+                        water: '#1E90FF'
+                    },
+                    fontFamily: {
+                        pixel: ['VT323', 'monospace', 'system-ui']
+                    },
+                    animation: {
+                        'float': 'float 30s infinite linear',
+                        'bounce-slow': 'bounce 3s infinite',
+                        'pulse-slow': 'pulse 4s infinite',
+                        'rain': 'rain 1s infinite linear',
+                        'snow': 'snow 3s infinite linear'
+                    },
+                    keyframes: {
+                        float: {
+                            '0%': { transform: 'translateX(-100px)' },
+                            '100%': { transform: 'translateX(calc(100vw + 100px))' }
+                        },
+                        rain: {
+                            '0%': { transform: 'translateY(-10px)', opacity: '0' },
+                            '50%': { opacity: '1' },
+                            '100%': { transform: 'translateY(100vh)', opacity: '0' }
+                        },
+                        snow: {
+                            '0%': { transform: 'translateY(-10px) translateX(0)', opacity: '0' },
+                            '50%': { opacity: '1' },
+                            '100%': { transform: 'translateY(100vh) translateX(20px)', opacity: '0' }
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .text-shadow {
+                text-shadow: 2px 2px 0px rgba(0, 0, 0, 0.3);
+            }
+            .text-shadow-sm {
+                text-shadow: 1px 1px 0px rgba(0, 0, 0, 0.3);
+            }
+            .cloud-shadow {
+                box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            }
+            .game-object {
+                transition: transform 0.3s ease;
+            }
+            .game-object:hover {
+                transform: scale(1.1);
+            }
+        }
+    </style>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=VT323&display=swap');
+        
+        body {
+            font-family: 'VT323', monospace;
+            background-color: #F5F5DC;
+            overflow: hidden;
+            touch-action: none;
+        }
+        
+        .cloud {
+            position: absolute;
+            background-color: white;
+            border-radius: 50%;
+            opacity: 0.9;
+        }
+        
+        .raindrop {
+            position: absolute;
+            background-color: rgba(30, 144, 255, 0.6);
+            width: 2px;
+            height: 10px;
+        }
+        
+        .snowflake {
+            position: absolute;
+            color: white;
+            font-size: 12px;
+        }
+        
+        .game-container {
+            position: relative;
+            width: 100%;
+            height: 100vh;
+            overflow: hidden;
+        }
+        
+        .sky {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 70%;
+            background: linear-gradient(to bottom, #87CEEB, #B0E0E6);
+            transition: background 1s ease;
+        }
+        
+        .ground {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 30%;
+            background-color: #7CFC00;
+            transition: background 1s ease;
+        }
+        
+        .player {
+            position: absolute;
+            width: 40px;
+            height: 60px;
+            transition: transform 0.2s ease;
+            z-index: 10;
+        }
+        
+        .player-body {
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+            height: 60%;
+            background-color: #4682B4;
+            border-radius: 5px 5px 0 0;
+        }
+        
+        .player-head {
+            position: absolute;
+            top: 0;
+            left: 25%;
+            width: 50%;
+            height: 40%;
+            background-color: #FFDAB9;
+            border-radius: 50%;
+        }
+        
+        .player-eye {
+            position: absolute;
+            top: 40%;
+            width: 3px;
+            height: 3px;
+            background-color: black;
+            border-radius: 50%;
+        }
+        
+        .player-eye.left {
+            left: 30%;
+        }
+        
+        .player-eye.right {
+            right: 30%;
+        }
+        
+        .crop {
+            position: absolute;
+            width: 30px;
+            height: 40px;
+            transition: all 0.5s ease;
+        }
+        
+        .crop-stage-0 {
+            height: 10px;
+            background-color: #90EE90;
+            border-radius: 5px 5px 0 0;
+        }
+        
+        .crop-stage-1 {
+            height: 20px;
+            background-color: #32CD32;
+            border-radius: 5px 5px 0 0;
+        }
+        
+        .crop-stage-2 {
+            height: 30px;
+            background-color: #228B22;
+            border-radius: 5px 5px 0 0;
+        }
+        
+        .crop-stage-3 {
+            height: 40px;
+            background-color: #FFD700;
+            border-radius: 5px 5px 0 0;
+            box-shadow: 0 0 5px #FFD700;
+        }
+        
+        .tool {
+            position: absolute;
+            width: 30px;
+            height: 30px;
+            background-color: #8B4513;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 16px;
+            color: white;
+        }
+        
+        .tool:hover {
+            transform: scale(1.1);
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+        }
+        
+        .tool.selected {
+            border: 2px solid #FFD700;
+            box-shadow: 0 0 10px #FFD700;
+        }
+        
+        .ui-panel {
+            position: absolute;
+            background-color: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 10px;
+            border-radius: 5px;
+            z-index: 20;
+        }
+        
+        .inventory-slot {
+            width: 30px;
+            height: 30px;
+            border: 1px solid #888;
+            background-color: rgba(255, 255, 255, 0.2);
+            margin: 2px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            transition: all 0.2s ease;
+        }
+        
+        .inventory-slot.selected {
+            border-color: #FFD700;
+            background-color: rgba(255, 215, 0, 0.3);
+            transform: scale(1.05);
+        }
+        
+        .inventory-count {
+            position: absolute;
+            bottom: -2px;
+            right: -2px;
+            background-color: rgba(0, 0, 0, 0.7);
+            color: white;
+            font-size: 10px;
+            padding: 1px 3px;
+            border-radius: 2px;
+        }
+        
+        .dialog-box {
+            position: absolute;
+            bottom: 100px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 15px;
+            border-radius: 5px;
+            border: 2px solid #FFD700;
+            max-width: 80%;
+            z-index: 30;
+            transition: all 0.3s ease;
+        }
+        
+        .dialog-arrow {
+            position: absolute;
+            bottom: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0;
+            height: 0;
+            border-left: 10px solid transparent;
+            border-right: 10px solid transparent;
+            border-top: 10px solid #FFD700;
+        }
+        
+        .notification {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 5px;
+            z-index: 40;
+            transition: all 0.3s ease;
+        }
+        
+        .button {
+            background-color: #4A7C59;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: none;
+            font-family: inherit;
+            font-size: 16px;
+        }
+        
+        .button:hover {
+            background-color: #3A6C49;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+        
+        .button:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+        
+        .button.primary {
+            background-color: #FFD700;
+            color: #333;
+        }
+        
+        .button.primary:hover {
+            background-color: #FFC107;
+        }
+        
+        .button.danger {
+            background-color: #DC3545;
+        }
+        
+        .button.danger:hover {
+            background-color: #C82333;
+        }
+    </style>
+</head>
+<body class="font-pixel">
+    <!-- 游戏容器 -->
+    <div id="game-container" class="game-container">
+        <!-- 天空 -->
+        <div id="sky" class="sky"></div>
+        
+        <!-- 云朵 -->
+        <div id="clouds-container"></div>
+        
+        <!-- 地面 -->
+        <div id="ground" class="ground"></div>
+        
+        <!-- 游戏对象容器 -->
+        <div id="game-objects" class="absolute inset-0"></div>
+        
+        <!-- 玩家 -->
+        <div id="player" class="player">
+            <div class="player-body"></div>
+            <div class="player-head">
+                <div class="player-eye left"></div>
+                <div class="player-eye right"></div>
+            </div>
+        </div>
+        
+        <!-- UI层 -->
+        <div id="ui-layer" class="absolute inset-0 pointer-events-none z-10">
+            <!-- 顶部状态栏 -->
+            <div class="absolute top-0 left-0 w-full flex justify-between items-center p-3 bg-black bg-opacity-50 text-white">
+                <div class="flex items-center">
+                    <div id="weather-icon" class="mr-2 text-xl">☀️</div>
+                    <div id="season-display" class="text-lg">春季 第1天</div>
+                </div>
+                <div id="time-display" class="text-xl">6:00 AM</div>
+                <div class="flex items-center">
+                    <span class="mr-2">💰</span>
+                    <span id="money-display">500</span>
+                </div>
+            </div>
+            
+            <!-- 底部工具栏 -->
+            <div class="absolute bottom-0 left-0 w-full flex justify-center items-center p-3 bg-black bg-opacity-50 text-white">
+                <div class="flex mr-6">
+                    <div class="tool selected" data-tool="hoe" id="tool-hoe">🔨</div>
+                    <div class="tool" data-tool="watering-can" id="tool-watering-can">🚿</div>
+                    <div class="tool" data-tool="scythe" id="tool-scythe">🔪</div>
+                </div>
+                <div class="flex" id="inventory-container">
+                    <div class="inventory-slot selected" data-index="0">
+                        <span>🌱</span>
+                        <span class="inventory-count">5</span>
+                    </div>
+                    <div class="inventory-slot" data-index="1">
+                        <span>🌽</span>
+                        <span class="inventory-count">3</span>
+                    </div>
+                    <div class="inventory-slot" data-index="2"></div>
+                    <div class="inventory-slot" data-index="3"></div>
+                    <div class="inventory-slot" data-index="4"></div>
+                    <div class="inventory-slot" data-index="5"></div>
+                </div>
+            </div>
+            
+            <!-- 能量条 -->
+            <div class="absolute top-12 left-4 w-40 h-4 bg-red-500 rounded-full overflow-hidden">
+                <div id="energy-bar" class="h-full bg-green-500" style="width: 100%"></div>
+            </div>
+            
+            <!-- 对话框 -->
+            <div id="dialog-box" class="dialog-box hidden">
+                <p id="dialog-text">欢迎来到星露谷！这是你的新农场。</p>
+                <div class="dialog-arrow"></div>
+            </div>
+            
+            <!-- 通知 -->
+            <div id="notification" class="notification hidden">通知内容</div>
+        </div>
+        
+        <!-- 游戏菜单 -->
+        <div id="game-menu" class="absolute inset-0 bg-black bg-opacity-80 flex flex-col justify-center items-center hidden z-50">
+            <h1 class="text-4xl text-yellow-400 mb-8 text-shadow">星露谷物语简化版</h1>
+            <div class="flex flex-col space-y-4">
+                <button id="start-game" class="button primary px-6 py-3 text-xl">开始游戏</button>
+                <button id="load-game" class="button px-6 py-3 text-xl">加载游戏</button>
+                <button id="settings" class="button px-6 py-3 text-xl">设置</button>
+                <button id="exit-game" class="button danger px-6 py-3 text-xl">退出游戏</button>
+            </div>
+        </div>
+        
+        <!-- 设置菜单 -->
+        <div id="settings-menu" class="absolute inset-0 bg-black bg-opacity-80 flex flex-col justify-center items-center hidden z-50">
+            <h2 class="text-3xl text-yellow-400 mb-6 text-shadow">设置</h2>
+            <div class="bg-gray-800 p-6 rounded-lg w-80">
+                <div class="mb-4">
+                    <label class="block text-white mb-2">音量</label>
+                    <input type="range" min="0" max="100" value="80" class="w-full" id="volume-slider">
+                </div>
+                <div class="mb-4">
+                    <label class="block text-white mb-2">游戏速度</label>
+                    <input type="range" min="50" max="150" value="100" class="w-full" id="game-speed-slider">
+                </div>
+                <div class="flex justify-between mt-6">
+                    <button id="save-settings" class="button primary px-4 py-2">保存</button>
+                    <button id="cancel-settings" class="button px-4 py-2">取消</button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 教程提示 -->
+        <div id="tutorial" class="absolute inset-0 bg-black bg-opacity-70 flex flex-col justify-center items-center text-white p-4 z-50">
+            <h2 class="text-3xl mb-4 text-yellow-400 text-shadow">欢迎来到星露谷物语简化版！</h2>
+            <div class="max-w-md text-left mb-6 bg-black bg-opacity-50 p-4 rounded">
+                <p class="mb-2">使用 <strong class="text-yellow-300">WASD</strong> 或 <strong class="text-yellow-300">方向键</strong> 移动角色</p>
+                <p class="mb-2">点击 <strong class="text-yellow-300">鼠标左键</strong> 使用当前工具</p>
+                <p class="mb-2">按 <strong class="text-yellow-300">1-3</strong> 切换工具</p>
+                <p class="mb-2">按 <strong class="text-yellow-300">I</strong> 切换物品栏</p>
+                <p>按 <strong class="text-yellow-300">ESC</strong> 打开菜单</p>
+            </div>
+            <button id="start-tutorial" class="button primary px-6 py-3 text-xl">开始游戏</button>
+        </div>
+    </div>
+
+    <script>
+        // 游戏常量
+        const PLAYER_SIZE = 40;
+        const CROP_SIZE = 30;
+        const GROUND_HEIGHT = 0.3; // 地面高度占屏幕的比例
+        const GAME_SPEED = 1000 / 60; // 60 FPS
+        
+        // 游戏配置
+        let gameConfig = {
+            volume: 80,
+            gameSpeed: 100,
+            showTooltips: true
+        };
+        
+        // 游戏状态
+        let gameState = {
+            player: {
+                x: 0,
+                y: 0,
+                direction: 'down',
+                speed: 3,
+                energy: 100,
+                tool: 'hoe'
+            },
+            crops: [],
+            inventory: [
+                { id: 'seed-1', name: '小麦种子', icon: '🌱', quantity: 5, type: 'seed' },
+                { id: 'seed-2', name: '玉米种子', icon: '🌽', quantity: 3, type: 'seed' }
+            ],
+            selectedInventoryIndex: 0,
+            money: 500,
+            time: {
+                hour: 6,
+                minute: 0,
+                day: 1,
+                season: 'spring',
+                dayOfWeek: 'Monday'
+            },
+            weather: 'sunny', // sunny, rainy, snowy
+            gameTime: 0, // 游戏内时间计数
+            isPaused: false,
+            gameStarted: false,
+            lastSaveTime: 0
+        };
+        
+        // 农作物数据
+        const cropData = {
+            'seed-1': {
+                stages: 4,
+                daysToGrow: 3,
+                seasons: ['spring', 'summer'],
+                sellPrice: 50,
+                name: '小麦'
+            },
+            'seed-2': {
+                stages: 4,
+                daysToGrow: 5,
+                seasons: ['summer'],
+                sellPrice: 75,
+                name: '玉米'
+            }
+        };
+        
+        // 季节数据
+        const seasonData = {
+            'spring': {
+                name: '春季',
+                skyColor: 'linear-gradient(to bottom, #87CEEB, #B0E0E6)',
+                groundColor: '#7CFC00',
+                crops: ['seed-1']
+            },
+            'summer': {
+                name: '夏季',
+                skyColor: 'linear-gradient(to bottom, #87CEFA, #87CEEB)',
+                groundColor: '#32CD32',
+                crops: ['seed-1', 'seed-2']
+            },
+            'autumn': {
+                name: '秋季',
+                skyColor: 'linear-gradient(to bottom, #FFB6C1, #FFA07A)',
+                groundColor: '#DAA520',
+                crops: []
+            },
+            'winter': {
+                name: '冬季',
+                skyColor: 'linear-gradient(to bottom, #B0C4DE, #D3D3D3)',
+                groundColor: '#F5F5F5',
+                crops: []
+            }
+        };
+        
+        // 天气数据
+        const weatherData = {
+            'sunny': {
+                icon: '☀️',
+                description: '晴天'
+            },
+            'rainy': {
+                icon: '🌧️',
+                description: '雨天'
+            },
+            'snowy': {
+                icon: '❄️',
+                description: '雪天'
+            }
+        };
+        
+        // DOM 元素
+        const gameContainer = document.getElementById('game-container');
+        const sky = document.getElementById('sky');
+        const ground = document.getElementById('ground');
+        const cloudsContainer = document.getElementById('clouds-container');
+        const gameObjects = document.getElementById('game-objects');
+        const player = document.getElementById('player');
+        const energyBar = document.getElementById('energy-bar');
+        const moneyDisplay = document.getElementById('money-display');
+        const timeDisplay = document.getElementById('time-display');
+        const seasonDisplay = document.getElementById('season-display');
+        const weatherIcon = document.getElementById('weather-icon');
+        const dialogBox = document.getElementById('dialog-box');
+        const dialogText = document.getElementById('dialog-text');
+        const notification = document.getElementById('notification');
+        const gameMenu = document.getElementById('game-menu');
+        const settingsMenu = document.getElementById('settings-menu');
+        const tutorial = document.getElementById('tutorial');
+        
+        // 初始化云朵
+        function initClouds() {
+            cloudsContainer.innerHTML = '';
+            
+            // 创建5-8个云朵
+            const cloudCount = Math.floor(Math.random() * 4) + 5;
+            
+            for (let i = 0; i < cloudCount; i++) {
+                const cloud = document.createElement('div');
+                cloud.className = 'cloud cloud-shadow animate-float';
+                
+                // 随机大小
+                const size = Math.floor(Math.random() * 60) + 40;
+                cloud.style.width = `${size}px`;
+                cloud.style.height = `${size * 0.6}px`;
+                
+                // 随机位置
+                cloud.style.top = `${Math.random() * 50}%`;
+                cloud.style.left = `${Math.random() * 100}%`;
+                
+                // 随机动画持续时间
+                const duration = Math.random() * 40 + 30;
+                cloud.style.animationDuration = `${duration}s`;
+                
+                // 随机延迟
+                const delay = Math.random() * 20;
+                cloud.style.animationDelay = `${delay}s`;
+                
+                cloudsContainer.appendChild(cloud);
+            }
+        }
+        
+        // 初始化天气效果
+        function initWeatherEffects() {
+            // 清除现有效果
+            const existingEffects = document.querySelectorAll('.raindrop, .snowflake');
+            existingEffects.forEach(effect => effect.remove());
+            
+            if (gameState.weather === 'rainy') {
+                // 创建雨滴
+                for (let i = 0; i < 100; i++) {
+                    const raindrop = document.createElement('div');
+                    raindrop.className = 'raindrop animate-rain';
+                    raindrop.style.left = `${Math.random() * 100}%`;
+                    raindrop.style.animationDelay = `${Math.random() * 1}s`;
+                    gameContainer.appendChild(raindrop);
+                }
+            } else if (gameState.weather === 'snowy') {
+                // 创建雪花
+                for (let i = 0; i < 50; i++) {
+                    const snowflake = document.createElement('div');
+                    snowflake.className = 'snowflake animate-snow';
+                    snowflake.textContent = '❄️';
+                    snowflake.style.left = `${Math.random() * 100}%`;
+                    snowflake.style.animationDelay = `${Math.random() * 3}s`;
+                    gameContainer.appendChild(snowflake);
+                }
+            }
+        }
+        
+        // 初始化农作物
+        function initCrops() {
+            gameObjects.innerHTML = '';
+            gameState.crops = [];
+        }
+        
+        // 更新玩家位置
+        function updatePlayerPosition() {
+            // 计算玩家在地面上的位置
+            const groundY = gameContainer.clientHeight * GROUND_HEIGHT;
+            player.style.left = `${gameState.player.x}px`;
+            player.style.bottom = `${groundY}px`;
+            
+            // 更新玩家方向
+            switch (gameState.player.direction) {
+                case 'up':
+                    player.style.transform = 'rotate(0deg)';
+                    break;
+                case 'right':
+                    player.style.transform = 'rotate(90deg)';
+                    break;
+                case 'down':
+                    player.style.transform = 'rotate(180deg)';
+                    break;
+                case 'left':
+                    player.style.transform = 'rotate(-90deg)';
+                    break;
+            }
+        }
+        
+        // 更新农作物显示
+        function updateCrops() {
+            // 清除现有农作物
+            const existingCrops = document.querySelectorAll('.crop');
+            existingCrops.forEach(crop => crop.remove());
+            
+            // 计算地面高度
+            const groundY = gameContainer.clientHeight * GROUND_HEIGHT;
+            
+            // 显示所有农作物
+            gameState.crops.forEach(crop => {
+                const cropElement = document.createElement('div');
+                cropElement.className = `crop crop-stage-${crop.stage}`;
+                cropElement.style.left = `${crop.x}px`;
+                cropElement.style.bottom = `${groundY}px`;
+                
+                // 如果农作物已成熟，添加发光效果
+                if (crop.stage === cropData[crop.type].stages - 1) {
+                    cropElement.classList.add('animate-pulse-slow');
+                }
+                
+                gameObjects.appendChild(cropElement);
+            });
+        }
+        
+        // 更新能量条
+        function updateEnergyBar() {
+            energyBar.style.width = `${gameState.player.energy}%`;
+            
+            // 根据能量值改变颜色
+            if (gameState.player.energy > 60) {
+                energyBar.className = 'h-full bg-green-500';
+            } else if (gameState.player.energy > 30) {
+                energyBar.className = 'h-full bg-yellow-500';
+            } else {
+                energyBar.className = 'h-full bg-red-500';
+            }
+        }
+        
+        // 更新时间显示
+        function updateTimeDisplay() {
+            const period = gameState.time.hour < 12 ? 'AM' : 'PM';
+            const displayHour = gameState.time.hour % 12 === 0 ? 12 : gameState.time.hour % 12;
+            timeDisplay.textContent = `${displayHour}:${gameState.time.minute.toString().padStart(2, '0')} ${period}`;
+        }
+        
+        // 更新季节显示
+        function updateSeasonDisplay() {
+            seasonDisplay.textContent = `${seasonData[gameState.time.season].name} 第${gameState.time.day}天`;
+        }
+        
+        // 更新天气显示
+        function updateWeatherDisplay() {
+            weatherIcon.textContent = weatherData[gameState.weather].icon;
+        }
+        
+        // 更新季节外观
+        function updateSeasonAppearance() {
+            sky.style.background = seasonData[gameState.time.season].skyColor;
+            ground.style.backgroundColor = seasonData[gameState.time.season].groundColor;
+        }
+        
+        // 更新物品栏显示
+        function updateInventoryDisplay() {
+            const inventorySlots = document.querySelectorAll('.inventory-slot');
+            
+            // 清空所有物品栏槽位
+            inventorySlots.forEach(slot => {
+                slot.innerHTML = '';
+                slot.classList.remove('selected');
+            });
+            
+            // 填充物品栏
+            gameState.inventory.forEach((item, index) => {
+                if (index < inventorySlots.length) {
+                    const slot = inventorySlots[index];
+                    slot.innerHTML = `
+                        <span>${item.icon}</span>
+                        <span class="inventory-count">${item.quantity}</span>
+                    `;
+                    
+                    if (index === gameState.selectedInventoryIndex) {
+                        slot.classList.add('selected');
+                    }
+                }
+            });
+        }
+        
+        // 显示通知
+        function showNotification(text, duration = 2000) {
+            notification.textContent = text;
+            notification.classList.remove('hidden');
+            
+            setTimeout(() => {
+                notification.classList.add('hidden');
+            }, duration);
+        }
+        
+        // 显示对话框
+        function showDialog(text) {
+            dialogText.textContent = text;
+            dialogBox.classList.remove('hidden');
+        }
+        
+        // 隐藏对话框
+        function hideDialog() {
+            dialogBox.classList.add('hidden');
+        }
+        
+        // 获取鼠标点击位置相对于地面的坐标
+        function getGroundPosition(x, y) {
+            const rect = gameContainer.getBoundingClientRect();
+            const groundY = gameContainer.clientHeight * GROUND_HEIGHT;
+            
+            return {
+                x: x - rect.left,
+                y: groundY
+            };
+        }
+        
+        // 检查位置是否在玩家附近
+        function isNearPlayer(x) {
+            const playerX = gameState.player.x;
+            return Math.abs(x - playerX) < 100;
+        }
+        
+        // 使用工具
+        function useTool(x, y) {
+            // 检查能量是否足够
+            if (gameState.player.energy <= 0) {
+                showNotification('能量不足！');
+                return;
+            }
+            
+            // 检查是否在玩家附近
+            if (!isNearPlayer(x)) {
+                showNotification('太远了！');
+                return;
+            }
+            
+            // 消耗能量
+            gameState.player.energy = Math.max(0, gameState.player.energy - 5);
+            updateEnergyBar();
+            
+            const tool = gameState.player.tool;
+            
+            switch (tool) {
+                case 'hoe':
+                    // 开垦土地，种植作物
+                    plantCrop(x, y);
+                    break;
+                    
+                case 'watering-can':
+                    // 浇水
+                    waterCrop(x, y);
+                    break;
+                    
+                case 'scythe':
+                    // 收割作物
+                    harvestCrop(x, y);
+                    break;
+            }
+        }
+        
+        // 种植作物
+        function plantCrop(x, y) {
+            // 检查是否有种子
+            if (gameState.selectedInventoryIndex >= gameState.inventory.length) {
+                showNotification('你没有选择任何物品');
+                return;
+            }
+            
+            const selectedItem = gameState.inventory[gameState.selectedInventoryIndex];
+            
+            // 检查是否是种子
+            if (selectedItem.type !== 'seed') {
+                showNotification('这不是种子');
+                return;
+            }
+            
+            // 检查是否在合适的季节
+            if (!cropData[selectedItem.id].seasons.includes(gameState.time.season)) {
+                showNotification(`${selectedItem.name}不能在${seasonData[gameState.time.season].name}种植！`);
+                return;
+            }
+            
+            // 检查该位置是否已有农作物
+            const hasCrop = gameState.crops.some(crop => Math.abs(crop.x - x) < CROP_SIZE);
+            if (hasCrop) {
+                showNotification('这里已经有农作物了');
+                return;
+            }
+            
+            // 种植农作物
+            gameState.crops.push({
+                x: x,
+                y: y,
+                type: selectedItem.id,
+                stage: 0,
+                watered: true,
+                plantedDay: gameState.time.day
+            });
+            
+            // 减少种子数量
+            selectedItem.quantity--;
+            
+            // 如果种子用完了，从物品栏中移除
+            if (selectedItem.quantity <= 0) {
+                gameState.inventory.splice(gameState.selectedInventoryIndex, 1);
+                
+                // 调整选中的物品栏索引
+                if (gameState.selectedInventoryIndex >= gameState.inventory.length) {
+                    gameState.selectedInventoryIndex = Math.max(0, gameState.inventory.length - 1);
+                }
+            }
+            
+            // 更新显示
+            updateInventoryDisplay();
+            updateCrops();
+            showNotification(`你种植了${cropData[selectedItem.id].name}`);
+        }
+        
+        // 浇水
+        function waterCrop(x, y) {
+            // 查找附近的农作物
+            const nearbyCrops = gameState.crops.filter(crop => Math.abs(crop.x - x) < CROP_SIZE);
+            
+            if (nearbyCrops.length === 0) {
+                showNotification('这里没有农作物');
+                return;
+            }
+            
+            // 浇水
+            nearbyCrops.forEach(crop => {
+                crop.watered = true;
+            });
+            
+            showNotification('你浇了水');
+        }
+        
+        // 收割作物
+        function harvestCrop(x, y) {
+            // 查找附近的农作物
+            const nearbyCrops = gameState.crops.filter(crop => Math.abs(crop.x - x) < CROP_SIZE);
+            
+            if (nearbyCrops.length === 0) {
+                showNotification('这里没有农作物');
+                return;
+            }
+            
+            // 检查是否成熟
+            const matureCrops = nearbyCrops.filter(crop => crop.stage === cropData[crop.type].stages - 1);
+            
+            if (matureCrops.length === 0) {
+                showNotification('农作物还没有成熟');
+                return;
+            }
+            
+            // 收割成熟的农作物
+            matureCrops.forEach(crop => {
+                const cropInfo = cropData[crop.type];
+                
+                // 获得金钱
+                gameState.money += cropInfo.sellPrice;
+                moneyDisplay.textContent = gameState.money;
+                
+                // 从列表中移除
+                const index = gameState.crops.indexOf(crop);
+                if (index !== -1) {
+                    gameState.crops.splice(index, 1);
+                }
+                
+                // 增加能量
+                gameState.player.energy = Math.min(100, gameState.player.energy + 10);
+                updateEnergyBar();
+            });
+            
+            // 更新显示
+            updateCrops();
+            showNotification(`你收获了${matureCrops.length}个农作物，获得了${matureCrops.length * cropData[matureCrops[0].type].sellPrice}金币！`);
+        }
+        
+        // 更新农作物生长
+        function updateCropGrowth() {
+            gameState.crops.forEach(crop => {
+                // 检查是否已浇水
+                if (crop.watered) {
+                    // 计算生长进度
+                    const daysPassed = gameState.time.day - crop.plantedDay;
+                    const growthProgress = daysPassed / cropData[crop.type].daysToGrow;
+                    
+                    // 更新生长阶段
+                    crop.stage = Math.min(
+                        Math.floor(growthProgress * cropData[crop.type].stages),
+                        cropData[crop.type].stages - 1
+                    );
+                    
+                    // 重置浇水状态
+                    crop.watered = false;
+                }
+            });
+            
+            // 更新显示
+            updateCrops();
+        }
+        
+        // 更新游戏时间
+        function updateGameTime() {
+            gameState.gameTime++;
+            
+            // 每60帧（约1秒）增加游戏内10分钟
+            if (gameState.gameTime % 60 === 0) {
+                gameState.time.minute += 10;
+                
+                if (gameState.time.minute >= 60) {
+                    gameState.time.minute = 0;
+                    gameState.time.hour++;
+                    
+                    // 如果到了晚上，减少能量
+                    if (gameState.time.hour >= 20) {
+                        gameState.player.energy = Math.max(0, gameState.player.energy - 1);
+                        updateEnergyBar();
+                    }
+                    
+                    // 如果到了第二天
+                    if (gameState.time.hour >= 24) {
+                        gameState.time.hour = 6;
+                        gameState.time.day++;
+                        
+                        // 更新季节
+                        if (gameState.time.day > 28) {
+                            gameState.time.day = 1;
+                            
+                            const seasons = ['spring', 'summer', 'autumn', 'winter'];
+                            const currentIndex = seasons.indexOf(gameState.time.season);
+                            gameState.time.season = seasons[(currentIndex + 1) % seasons.length];
+                            
+                            // 更新季节显示和外观
+                            updateSeasonDisplay();
+                            updateSeasonAppearance();
+                            
+                            // 季节变化通知
+                            showNotification(`季节变为了${seasonData[gameState.time.season].name}！`);
+                        }
+                        
+                        // 随机更新天气
+                        updateWeather();
+                        
+                        // 更新农作物生长
+                        updateCropGrowth();
+                    }
+                }
+                
+                // 更新时间显示
+                updateTimeDisplay();
+            }
+        }
+        
+        // 更新天气
+        function updateWeather() {
+            const weathers = ['sunny', 'rainy', 'snowy'];
+            let weatherChances = [0.7, 0.2, 0.1]; // 70%晴天，20%雨天，10%雪天
+            
+            // 冬季雪天几率更高
+            if (gameState.time.season === 'winter') {
+                weatherChances = [0.3, 0.1, 0.6]; // 30%晴天，10%雨天，60%雪天
+            }
+            
+            // 随机选择天气
+            let random = Math.random();
+            let cumulativeChance = 0;
+            
+            for (let i = 0; i < weathers.length; i++) {
+                cumulativeChance += weatherChances[i];
+                if (random < cumulativeChance) {
+                    gameState.weather = weathers[i];
+                    break;
+                }
+            }
+            
+            // 更新天气显示和效果
+            updateWeatherDisplay();
+            initWeatherEffects();
+            
+            // 天气变化通知
+            showNotification(`天气变为了${weatherData[gameState.weather].description}！`);
+            
+            // 雨天自动浇水
+            if (gameState.weather === 'rainy') {
+                gameState.crops.forEach(crop => {
+                    crop.watered = true;
+                });
+                showNotification('雨水滋润了你的农作物！');
+            }
+        }
+        
+        // 游戏循环
+        function gameLoop() {
+            if (!gameState.isPaused && gameState.gameStarted) {
+                updateGameTime();
+                updatePlayerPosition();
+            }
+            
+            requestAnimationFrame(gameLoop);
+        }
+        
+        // 初始化游戏
+        function initGame() {
+            // 设置玩家初始位置
+            gameState.player.x = gameContainer.clientWidth / 2;
+            
+            // 初始化云朵
+            initClouds();
+            
+            // 初始化天气效果
+            initWeatherEffects();
+            
+            // 初始化农作物
+            initCrops();
+            
+            // 更新显示
+            updatePlayerPosition();
+            updateSeasonDisplay();
+            updateSeasonAppearance();
+            updateWeatherDisplay();
+            updateTimeDisplay();
+            updateInventoryDisplay();
+            updateEnergyBar();
+            
+            // 显示初始对话
+            showDialog('欢迎来到星露谷！这是你的新农场。使用工具栏中的工具来种植和收获农作物。');
+            
+            // 标记游戏已开始
+            gameState.gameStarted = true;
+            
+            // 开始游戏循环
+            gameLoop();
+        }
+        
+        // 保存游戏
+        function saveGame() {
+            try {
+                const saveData = {
+                    gameState: gameState,
+                    gameConfig: gameConfig,
+                    timestamp: Date.now()
+                };
+                
+                localStorage.setItem('stardewValleySimpleSave', JSON.stringify(saveData));
+                return true;
+            } catch (error) {
+                console.error('保存游戏失败:', error);
+                return false;
+            }
+        }
+        
+        // 加载游戏
+        function loadGame() {
+            try {
+                const saveData = JSON.parse(localStorage.getItem('stardewValleySimpleSave'));
+                
+                if (saveData) {
+                    gameState = saveData.gameState;
+                    gameConfig = saveData.gameConfig;
+                    
+                    // 更新显示
+                    moneyDisplay.textContent = gameState.money;
+                    updateSeasonDisplay();
+                    updateSeasonAppearance();
+                    updateWeatherDisplay();
+                    updateTimeDisplay();
+                    updateInventoryDisplay();
+                    updateEnergyBar();
+                    updateCrops();
+                    updatePlayerPosition();
+                    
+                    // 初始化天气效果
+                    initWeatherEffects();
+                    
+                    return true;
+                }
+                
+                return false;
+            } catch (error) {
+                console.error('加载游戏失败:', error);
+                return false;
+            }
+        }
+        
+        // 事件监听器
+        window.addEventListener('resize', () => {
+            updatePlayerPosition();
+            updateCrops();
+        });
+        
+        // 键盘事件
+        document.addEventListener('keydown', (e) => {
+            if (dialogBox.classList.contains('hidden')) {
+                switch (e.key) {
+                    case 'w':
+                    case 'ArrowUp':
+                        gameState.player.direction = 'up';
+                        gameState.player.y = Math.max(0, gameState.player.y - gameState.player.speed);
+                        break;
+                        
+                    case 's':
+                    case 'ArrowDown':
+                        gameState.player.direction = 'down';
+                        gameState.player.y = Math.min(gameContainer.clientHeight * (1 - GROUND_HEIGHT) - PLAYER_SIZE, gameState.player.y + gameState.player.speed);
+                        break;
+                        
+                    case 'a':
+                    case 'ArrowLeft':
+                        gameState.player.direction = 'left';
+                        gameState.player.x = Math.max(0, gameState.player.x - gameState.player.speed);
+                        updatePlayerPosition();
+                        break;
+                        
+                    case 'd':
+                    case 'ArrowRight':
+                        gameState.player.direction = 'right';
+                        gameState.player.x = Math.min(gameContainer.clientWidth - PLAYER_SIZE, gameState.player.x + gameState.player.speed);
+                        updatePlayerPosition();
+                        break;
+                        
+                    case '1':
+                    case '2':
+                    case '3':
+                        // 选择工具
+                        const toolIndex = parseInt(e.key) - 1;
+                        const tools = ['hoe', 'watering-can', 'scythe'];
+                        
+                        if (toolIndex < tools.length) {
+                            gameState.player.tool = tools[toolIndex];
+                            
+                            // 更新工具选择显示
+                            const toolElements = document.querySelectorAll('.tool');
+                            toolElements.forEach((element, index) => {
+                                element.classList.toggle('selected', index === toolIndex);
+                            });
+                        }
+                        break;
+                        
+                    case 'i':
+                        // 切换物品栏
+                        if (gameState.inventory.length > 0) {
+                            gameState.selectedInventoryIndex = (gameState.selectedInventoryIndex + 1) % gameState.inventory.length;
+                            updateInventoryDisplay();
+                        }
+                        break;
+                        
+                    case 'Escape':
+                        // 打开/关闭菜单
+                        gameMenu.classList.toggle('hidden');
+                        gameState.isPaused = !gameState.isPaused;
+                        break;
+                }
+            } else {
+                // 如果对话框可见，按任意键关闭
+                hideDialog();
+            }
+        });
+        
+        // 鼠标点击事件
+        gameContainer.addEventListener('click', (e) => {
+            if (!dialogBox.classList.contains('hidden')) {
+                // 如果对话框可见，点击关闭
+                hideDialog();
+                return;
+            }
+            
+            const rect = gameContainer.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            
+            // 检查是否点击了地面
+            const groundY = gameContainer.clientHeight * GROUND_HEIGHT;
+            if (y >= gameContainer.clientHeight - groundY) {
+                useTool(x, y);
+            }
+        });
+        
+        // 工具选择事件
+        document.querySelectorAll('.tool').forEach((tool, index) => {
+            tool.addEventListener('click', () => {
+                const tools = ['hoe', 'watering-can', 'scythe'];
+                
+                if (index < tools.length) {
+                    gameState.player.tool = tools[index];
+                    
+                    // 更新工具选择显示
+                    document.querySelectorAll('.tool').forEach((element, i) => {
+                        element.classList.toggle('selected', i === index);
+                    });
+                }
+            });
+        });
+        
+        // 物品栏选择事件
+        document.querySelectorAll('.inventory-slot').forEach((slot, index) => {
+            slot.addEventListener('click', () => {
+                if (index < gameState.inventory.length) {
+                    gameState.selectedInventoryIndex = index;
+                    updateInventoryDisplay();
+                }
+            });
+        });
+        
+        // 开始游戏按钮
+        document.getElementById('start-tutorial').addEventListener('click', () => {
+            tutorial.classList.add('hidden');
+            initGame();
+        });
+        
+        document.getElementById('start-game').addEventListener('click', () => {
+            gameMenu.classList.add('hidden');
+            if (!gameState.gameStarted) {
+                initGame();
+            } else {
+                gameState.isPaused = false;
+            }
+        });
+        
+        // 加载游戏按钮
+        document.getElementById('load-game').addEventListener('click', () => {
+            if (loadGame()) {
+                gameMenu.classList.add('hidden');
+                gameState.isPaused = false;
+                showNotification('游戏加载成功');
+            } else {
+                showNotification('没有找到存档');
+            }
+        });
+        
+        // 设置按钮
+        document.getElementById('settings').addEventListener('click', () => {
+            gameMenu.classList.add('hidden');
+            settingsMenu.classList.remove('hidden');
+            
+            // 更新设置UI
+            document.getElementById('volume-slider').value = gameConfig.volume;
+            document.getElementById('game-speed-slider').value = gameConfig.gameSpeed;
+        });
+        
+        // 退出游戏按钮
+        document.getElementById('exit-game').addEventListener('click', () => {
+            if (confirm('确定要退出游戏吗？未保存的进度将会丢失。')) {
+                // 重置游戏状态
+                gameState = {
+                    player: {
+                        x: 0,
+                        y: 0,
+                        direction: 'down',
+                        speed: 3,
+                        energy: 100,
+                        tool: 'hoe'
+                    },
+                    crops: [],
+                    inventory: [
+                        { id: 'seed-1', name: '小麦种子', icon: '🌱', quantity: 5, type: 'seed' },
+                        { id: 'seed-2', name: '玉米种子', icon: '🌽', quantity: 3, type: 'seed' }
+                    ],
+                    selectedInventoryIndex: 0,
+                    money: 500,
+                    time: {
+                        hour: 6,
+                        minute: 0,
+                        day: 1,
+                        season: 'spring',
+                        dayOfWeek: 'Monday'
+                    },
+                    weather: 'sunny',
+                    gameTime: 0,
+                    isPaused: false,
+                    gameStarted: false,
+                    lastSaveTime: 0
+                };
+                
+                // 显示教程
+                tutorial.classList.remove('hidden');
+                gameMenu.classList.add('hidden');
+            }
+        });
+        
+        // 保存设置按钮
+        document.getElementById('save-settings').addEventListener('click', () => {
+            gameConfig.volume = parseInt(document.getElementById('volume-slider').value);
+            gameConfig.gameSpeed = parseInt(document.getElementById('game-speed-slider').value);
+            
+            // 应用游戏速度
+            gameState.player.speed = 3 * (gameConfig.gameSpeed / 100);
+            
+            settingsMenu.classList.add('hidden');
+            gameMenu.classList.remove('hidden');
+            
+            showNotification('设置已保存');
+        });
+        
+        // 取消设置按钮
+        document.getElementById('cancel-settings').addEventListener('click', () => {
+            settingsMenu.classList.add('hidden');
+            gameMenu.classList.remove('hidden');
+        });
+        
+        // 初始化物品栏显示
+        updateInventoryDisplay();
+        
+        // 显示游戏菜单
+        gameMenu.classList.remove('hidden');
+    </script>
+</body>
+</html>

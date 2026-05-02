@@ -1,0 +1,1404 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>可爱番茄作息</title>
+    <!-- Tailwind CSS v3 -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome -->
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.8/dist/chart.umd.min.js"></script>
+    <!-- 统一的 Tailwind 配置 -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#FF6B6B',
+                        secondary: '#4ECDC4',
+                        accent: '#FFE66D',
+                        dark: '#292F36',
+                        light: '#F7FFF7'
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                    animation: {
+                        'bounce-slow': 'bounce 2s infinite',
+                        'pulse-slow': 'pulse 3s infinite',
+                    }
+                }
+            }
+        }
+    </script>
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .content-auto {
+                content-visibility: auto;
+            }
+            .text-shadow {
+                text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            }
+            .card-shadow {
+                box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            }
+            .tomato-shadow {
+                filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.1));
+            }
+            .progress-ring-circle {
+                transition: stroke-dashoffset 0.35s;
+                transform: rotate(-90deg);
+                transform-origin: 50% 50%;
+            }
+            .tab-active {
+                @apply border-b-2 border-primary text-primary;
+            }
+            .btn-primary {
+                @apply bg-primary text-white font-medium py-2 px-4 rounded-lg hover:bg-opacity-90 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-opacity-50;
+            }
+            .btn-secondary {
+                @apply bg-secondary text-white font-medium py-2 px-4 rounded-lg hover:bg-opacity-90 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-secondary focus:ring-opacity-50;
+            }
+            .btn-outline {
+                @apply border border-primary text-primary font-medium py-2 px-4 rounded-lg hover:bg-primary hover:text-white transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-opacity-50;
+            }
+            .input-field {
+                @apply w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent;
+            }
+            .card {
+                @apply bg-white rounded-xl p-6 card-shadow;
+            }
+            .badge {
+                @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
+            }
+            .badge-primary {
+                @apply badge bg-primary bg-opacity-10 text-primary;
+            }
+            .badge-secondary {
+                @apply badge bg-secondary bg-opacity-10 text-secondary;
+            }
+        }
+    </style>
+</head>
+<body class="bg-light min-h-screen font-sans text-dark">
+    <!-- 背景装饰 -->
+    <div class="fixed inset-0 -z-10 opacity-10 pointer-events-none">
+        <img src="https://p11-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/rc/pc/super_tool/cf3af15a8ba643a798709c520eab2854~tplv-a9rns2rl98-image.image?lk3s=8e244e95&rcl=202605021532044598EFF75513D9C5E631&rrcfp=f06b921b&x-expires=1780299182&x-signature=99LzZVkSfc1CQDZqteZWfdNcG%2Bw%3D" 
+             alt="背景" class="w-full h-full object-cover">
+    </div>
+
+    <!-- 主容器 -->
+    <div class="container mx-auto px-4 py-6 max-w-md">
+        <!-- 顶部用户信息 -->
+        <div class="flex items-center justify-between mb-6">
+            <div class="flex items-center space-x-3">
+                <div class="relative">
+                    <img id="user-avatar" src="https://p3-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/rc/pc/super_tool/d4afd5f2f42c4099a9004191fde51d81~tplv-a9rns2rl98-image.image?lk3s=8e244e95&rcl=202605021532044598EFF75513D9C5E631&rrcfp=f06b921b&x-expires=1780299149&x-signature=fc%2BRyxhUIS5RRCiKCBF59GMsShs%3D" 
+                         alt="番茄头像" class="w-12 h-12 rounded-full border-2 border-primary">
+                    <div class="absolute -bottom-1 -right-1 bg-accent rounded-full w-5 h-5 flex items-center justify-center text-xs font-bold">
+                        <span id="user-level">1</span>
+                    </div>
+                </div>
+                <div>
+                    <h2 class="font-bold text-lg">你好，番茄侠</h2>
+                    <div class="flex items-center text-xs text-gray-500">
+                        <span>距离升级还需</span>
+                        <div class="mx-1 w-24 h-1.5 bg-gray-200 rounded-full overflow-hidden">
+                            <div id="exp-progress" class="h-full bg-accent" style="width: 30%"></div>
+                        </div>
+                        <span id="exp-remaining">70</span>
+                        <span class="ml-1">经验</span>
+                    </div>
+                </div>
+            </div>
+            <button id="settings-btn" class="p-2 rounded-full hover:bg-gray-100">
+                <i class="fa fa-cog text-gray-500"></i>
+            </button>
+        </div>
+
+        <!-- 主内容区域 -->
+        <main id="main-content">
+            <!-- 番茄钟页面 -->
+            <div id="pomodoro-page" class="page active">
+                <!-- 番茄钟计时器 -->
+                <div class="card mb-6 relative overflow-hidden">
+                    <div class="absolute top-0 right-0 p-3">
+                        <span id="session-type" class="badge-primary">工作时间</span>
+                    </div>
+                    
+                    <div class="flex flex-col items-center justify-center py-8">
+                        <!-- 圆形进度条 -->
+                        <div class="relative w-64 h-64 mb-6">
+                            <svg class="w-full h-full" viewBox="0 0 100 100">
+                                <!-- 背景圆环 -->
+                                <circle class="text-gray-200" stroke-width="8" stroke="currentColor" fill="transparent" r="40" cx="50" cy="50" />
+                                <!-- 进度圆环 -->
+                                <circle id="progress-ring" class="progress-ring-circle text-primary" stroke-width="8" stroke="currentColor" fill="transparent" r="40" cx="50" cy="50" stroke-dasharray="251.2" stroke-dashoffset="0" />
+                            </svg>
+                            
+                            <!-- 时间显示 -->
+                            <div class="absolute inset-0 flex flex-col items-center justify-center">
+                                <span id="time-display" class="text-5xl font-bold">25:00</span>
+                                <span id="session-label" class="text-sm text-gray-500 mt-2">专注工作</span>
+                            </div>
+                        </div>
+                        
+                        <!-- 控制按钮 -->
+                        <div class="flex space-x-4 mb-6">
+                            <button id="start-btn" class="btn-primary flex items-center">
+                                <i class="fa fa-play mr-2"></i> 开始
+                            </button>
+                            <button id="pause-btn" class="btn-outline flex items-center hidden">
+                                <i class="fa fa-pause mr-2"></i> 暂停
+                            </button>
+                            <button id="reset-btn" class="btn-outline flex items-center">
+                                <i class="fa fa-refresh mr-2"></i> 重置
+                            </button>
+                        </div>
+                        
+                        <!-- 时间快速调整 -->
+                        <div class="w-full bg-gray-100 rounded-lg p-4">
+                            <div class="flex justify-between items-center mb-3">
+                                <h4 class="font-medium text-sm text-gray-700">快速调整时间</h4>
+                                <span id="current-mode-label" class="text-xs badge-primary">工作模式</span>
+                            </div>
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <div class="flex items-center justify-between mb-1">
+                                        <label class="text-xs text-gray-500">工作时间</label>
+                                        <div class="flex items-center">
+                                            <button id="decrease-work-time" class="w-6 h-6 flex items-center justify-center rounded-full bg-gray-200 hover:bg-gray-300">
+                                                <i class="fa fa-minus text-xs"></i>
+                                            </button>
+                                            <span id="work-time-display" class="mx-2 text-sm font-medium">25</span>
+                                            <button id="increase-work-time" class="w-6 h-6 flex items-center justify-center rounded-full bg-gray-200 hover:bg-gray-300">
+                                                <i class="fa fa-plus text-xs"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <input type="range" id="work-time-slider" min="1" max="60" value="25" class="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer">
+                                </div>
+                                <div>
+                                    <div class="flex items-center justify-between mb-1">
+                                        <label class="text-xs text-gray-500">休息时间</label>
+                                        <div class="flex items-center">
+                                            <button id="decrease-break-time" class="w-6 h-6 flex items-center justify-center rounded-full bg-gray-200 hover:bg-gray-300">
+                                                <i class="fa fa-minus text-xs"></i>
+                                            </button>
+                                            <span id="break-time-display" class="mx-2 text-sm font-medium">5</span>
+                                            <button id="increase-break-time" class="w-6 h-6 flex items-center justify-center rounded-full bg-gray-200 hover:bg-gray-300">
+                                                <i class="fa fa-plus text-xs"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <input type="range" id="break-time-slider" min="1" max="30" value="5" class="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 当前任务 -->
+                <div class="card mb-6">
+                    <h3 class="font-bold text-lg mb-3 flex items-center">
+                        <i class="fa fa-tasks text-primary mr-2"></i> 当前任务
+                    </h3>
+                    <div id="current-task" class="p-4 bg-gray-50 rounded-lg">
+                        <p class="text-gray-500 text-center">暂无进行中的任务</p>
+                    </div>
+                </div>
+                
+                <!-- 快速任务 -->
+                <div class="card">
+                    <div class="flex justify-between items-center mb-3">
+                        <h3 class="font-bold text-lg flex items-center">
+                            <i class="fa fa-star text-accent mr-2"></i> 快速任务
+                        </h3>
+                        <button id="add-task-btn" class="text-primary hover:text-primary-dark">
+                            <i class="fa fa-plus-circle"></i>
+                        </button>
+                    </div>
+                    <div id="quick-tasks" class="space-y-2">
+                        <!-- 任务项将通过JS动态添加 -->
+                        <div class="task-item p-3 bg-gray-50 rounded-lg flex justify-between items-center">
+                            <div class="flex items-center">
+                                <input type="checkbox" class="task-checkbox w-4 h-4 text-primary rounded focus:ring-primary mr-2">
+                                <span class="task-text">完成项目报告</span>
+                            </div>
+                            <div class="flex items-center space-x-2">
+                                <span class="badge-primary">重要</span>
+                                <button class="text-gray-400 hover:text-gray-600 task-delete">
+                                    <i class="fa fa-trash-o"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="task-item p-3 bg-gray-50 rounded-lg flex justify-between items-center">
+                            <div class="flex items-center">
+                                <input type="checkbox" class="task-checkbox w-4 h-4 text-primary rounded focus:ring-primary mr-2">
+                                <span class="task-text">学习前端框架</span>
+                            </div>
+                            <div class="flex items-center space-x-2">
+                                <span class="badge-secondary">常规</span>
+                                <button class="text-gray-400 hover:text-gray-600 task-delete">
+                                    <i class="fa fa-trash-o"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 统计页面 -->
+            <div id="stats-page" class="page hidden">
+                <div class="card mb-6">
+                    <h3 class="font-bold text-lg mb-4">专注统计</h3>
+                    
+                    <!-- 统计选项卡 -->
+                    <div class="flex border-b border-gray-200 mb-4">
+                        <button class="stat-tab tab-active flex-1 py-2 text-center" data-period="day">日</button>
+                        <button class="stat-tab flex-1 py-2 text-center" data-period="week">周</button>
+                        <button class="stat-tab flex-1 py-2 text-center" data-period="month">月</button>
+                    </div>
+                    
+                    <!-- 统计图表 -->
+                    <div class="h-64">
+                        <canvas id="stats-chart"></canvas>
+                    </div>
+                    
+                    <!-- 统计数据 -->
+                    <div class="grid grid-cols-2 gap-4 mt-6">
+                        <div class="bg-gray-50 p-4 rounded-lg text-center">
+                            <p class="text-gray-500 text-sm">总专注时长</p>
+                            <p id="total-time" class="text-2xl font-bold">2.5小时</p>
+                        </div>
+                        <div class="bg-gray-50 p-4 rounded-lg text-center">
+                            <p class="text-gray-500 text-sm">完成番茄钟</p>
+                            <p id="total-pomodoros" class="text-2xl font-bold">6个</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 连续打卡 -->
+                <div class="card">
+                    <h3 class="font-bold text-lg mb-4">连续打卡</h3>
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <p class="text-gray-500">当前连续天数</p>
+                            <p id="streak-days" class="text-3xl font-bold">3天</p>
+                        </div>
+                        <div class="w-16 h-16 rounded-full bg-primary bg-opacity-10 flex items-center justify-center">
+                            <i class="fa fa-fire text-primary text-2xl"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 排行榜页面 -->
+            <div id="ranking-page" class="page hidden">
+                <div class="card mb-6">
+                    <h3 class="font-bold text-lg mb-4">专注排行榜</h3>
+                    
+                    <!-- 排行榜选项卡 -->
+                    <div class="flex border-b border-gray-200 mb-4">
+                        <button class="ranking-tab tab-active flex-1 py-2 text-center" data-type="friends">好友</button>
+                        <button class="ranking-tab flex-1 py-2 text-center" data-type="global">全球</button>
+                    </div>
+                    
+                    <!-- 排行榜列表 -->
+                    <div class="space-y-4">
+                        <!-- 排行榜项目 -->
+                        <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                            <div class="flex items-center">
+                                <span class="w-6 h-6 rounded-full bg-yellow-500 flex items-center justify-center text-white font-bold mr-3">1</span>
+                                <img src="https://p3-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/rc/pc/super_tool/719e751681da403a9bd7d657866b1f4f~tplv-a9rns2rl98-image.image?lk3s=8e244e95&rcl=202605021532044598EFF75513D9C5E631&rrcfp=f06b921b&x-expires=1780299150&x-signature=UDbP3IxOA7UyiLx962Qg5o99hr4%3D" 
+                                     alt="用户头像" class="w-10 h-10 rounded-full mr-3">
+                                <div>
+                                    <p class="font-medium">番茄大神</p>
+                                    <p class="text-xs text-gray-500">今日专注 5小时20分</p>
+                                </div>
+                            </div>
+                            <div class="text-right">
+                                <p class="font-bold">1250</p>
+                                <p class="text-xs text-gray-500">积分</p>
+                            </div>
+                        </div>
+                        
+                        <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                            <div class="flex items-center">
+                                <span class="w-6 h-6 rounded-full bg-gray-300 flex items-center justify-center text-white font-bold mr-3">2</span>
+                                <img src="https://p3-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/rc/pc/super_tool/5a3dfe4760c2475dbd545aa42b9d0832~tplv-a9rns2rl98-image.image?lk3s=8e244e95&rcl=202605021532044598EFF75513D9C5E631&rrcfp=f06b921b&x-expires=1780299149&x-signature=9dzNvUKrFO%2FK5JkSVjDBlLV4swo%3D" 
+                                     alt="用户头像" class="w-10 h-10 rounded-full mr-3">
+                                <div>
+                                    <p class="font-medium">专注达人</p>
+                                    <p class="text-xs text-gray-500">今日专注 4小时45分</p>
+                                </div>
+                            </div>
+                            <div class="text-right">
+                                <p class="font-bold">1080</p>
+                                <p class="text-xs text-gray-500">积分</p>
+                            </div>
+                        </div>
+                        
+                        <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                            <div class="flex items-center">
+                                <span class="w-6 h-6 rounded-full bg-amber-700 flex items-center justify-center text-white font-bold mr-3">3</span>
+                                <img src="https://p26-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/rc/pc/super_tool/0ce9464c064b423798600e6fd70971b3~tplv-a9rns2rl98-image.image?lk3s=8e244e95&rcl=202605021532044598EFF75513D9C5E631&rrcfp=f06b921b&x-expires=1780299151&x-signature=2pAAbs0GfVmWXFamGktj1AiftG8%3D" 
+                                     alt="用户头像" class="w-10 h-10 rounded-full mr-3">
+                                <div>
+                                    <p class="font-medium">学习小能手</p>
+                                    <p class="text-xs text-gray-500">今日专注 3小时15分</p>
+                                </div>
+                            </div>
+                            <div class="text-right">
+                                <p class="font-bold">920</p>
+                                <p class="text-xs text-gray-500">积分</p>
+                            </div>
+                        </div>
+                        
+                        <!-- 当前用户 -->
+                        <div class="flex items-center justify-between p-3 bg-primary bg-opacity-10 rounded-lg">
+                            <div class="flex items-center">
+                                <span class="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center text-gray-700 font-bold mr-3">8</span>
+                                <img src="https://p3-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/rc/pc/super_tool/d4afd5f2f42c4099a9004191fde51d81~tplv-a9rns2rl98-image.image?lk3s=8e244e95&rcl=202605021532044598EFF75513D9C5E631&rrcfp=f06b921b&x-expires=1780299149&x-signature=fc%2BRyxhUIS5RRCiKCBF59GMsShs%3D" 
+                                     alt="用户头像" class="w-10 h-10 rounded-full mr-3">
+                                <div>
+                                    <p class="font-medium">你</p>
+                                    <p class="text-xs text-gray-500">今日专注 1小时30分</p>
+                                </div>
+                            </div>
+                            <div class="text-right">
+                                <p class="font-bold">520</p>
+                                <p class="text-xs text-gray-500">积分</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+        
+        <!-- 底部导航 -->
+        <nav class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 py-2 px-4 max-w-md mx-auto">
+            <div class="flex justify-around">
+                <button class="nav-btn active flex flex-col items-center w-1/3 py-2" data-page="pomodoro-page">
+                    <i class="fa fa-clock-o text-xl"></i>
+                    <span class="text-xs mt-1">番茄钟</span>
+                </button>
+                <button class="nav-btn flex flex-col items-center w-1/3 py-2" data-page="stats-page">
+                    <i class="fa fa-bar-chart text-xl"></i>
+                    <span class="text-xs mt-1">统计</span>
+                </button>
+                <button class="nav-btn flex flex-col items-center w-1/3 py-2" data-page="ranking-page">
+                    <i class="fa fa-trophy text-xl"></i>
+                    <span class="text-xs mt-1">排行</span>
+                </button>
+            </div>
+        </nav>
+    </div>
+    
+    <!-- 添加任务模态框 -->
+    <div id="add-task-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-xl p-6 w-5/6 max-w-md">
+            <h3 class="font-bold text-lg mb-4">添加新任务</h3>
+            <form id="task-form">
+                <div class="mb-4">
+                    <label for="task-title" class="block text-gray-700 text-sm font-medium mb-2">任务名称</label>
+                    <input type="text" id="task-title" class="input-field" placeholder="输入任务名称" required>
+                </div>
+                <div class="mb-4">
+                    <label for="task-priority" class="block text-gray-700 text-sm font-medium mb-2">优先级</label>
+                    <select id="task-priority" class="input-field">
+                        <option value="常规">常规</option>
+                        <option value="重要">重要</option>
+                        <option value="紧急">紧急</option>
+                    </select>
+                </div>
+                <div class="flex justify-end space-x-3">
+                    <button type="button" id="cancel-task-btn" class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50">取消</button>
+                    <button type="submit" class="btn-primary">添加</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- 设置模态框 -->
+    <div id="settings-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-xl p-6 w-5/6 max-w-md">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="font-bold text-lg">设置</h3>
+                <button id="close-settings-btn" class="text-gray-500 hover:text-gray-700">
+                    <i class="fa fa-times"></i>
+                </button>
+            </div>
+            
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-gray-700 text-sm font-medium mb-2">工作时间（分钟）</label>
+                    <input type="number" id="work-time" class="input-field" value="25" min="1" max="60">
+                </div>
+                
+                <div>
+                    <label class="block text-gray-700 text-sm font-medium mb-2">短休息时间（分钟）</label>
+                    <input type="number" id="short-break" class="input-field" value="5" min="1" max="30">
+                </div>
+                
+                <div>
+                    <label class="block text-gray-700 text-sm font-medium mb-2">长休息时间（分钟）</label>
+                    <input type="number" id="long-break" class="input-field" value="15" min="1" max="60">
+                </div>
+                
+                <div>
+                    <label class="block text-gray-700 text-sm font-medium mb-2">提醒音效</label>
+                    <div class="flex items-center">
+                        <label class="inline-flex items-center cursor-pointer">
+                            <input type="checkbox" id="sound-toggle" class="sr-only peer" checked>
+                            <div class="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary peer-focus:ring-opacity-50 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+                            <span class="ml-3 text-sm font-medium text-gray-700">开启</span>
+                        </label>
+                    </div>
+                </div>
+                
+                <div>
+                    <label class="block text-gray-700 text-sm font-medium mb-2">震动提醒</label>
+                    <div class="flex items-center">
+                        <label class="inline-flex items-center cursor-pointer">
+                            <input type="checkbox" id="vibration-toggle" class="sr-only peer" checked>
+                            <div class="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary peer-focus:ring-opacity-50 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+                            <span class="ml-3 text-sm font-medium text-gray-700">开启</span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="mt-6 flex justify-end">
+                <button id="save-settings-btn" class="btn-primary">保存设置</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 完成番茄钟奖励模态框 -->
+    <div id="reward-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-xl p-6 w-5/6 max-w-md text-center">
+            <div class="mb-4">
+                <img id="reward-image" src="https://p3-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/rc/pc/super_tool/d4afd5f2f42c4099a9004191fde51d81~tplv-a9rns2rl98-image.image?lk3s=8e244e95&rcl=202605021532044598EFF75513D9C5E631&rrcfp=f06b921b&x-expires=1780299149&x-signature=fc%2BRyxhUIS5RRCiKCBF59GMsShs%3D" 
+                     alt="奖励" class="w-32 h-32 mx-auto">
+            </div>
+            <h3 class="font-bold text-xl mb-2">太棒了！</h3>
+            <p class="text-gray-600 mb-4">你完成了一个番茄钟，获得了 <span id="exp-gained" class="font-bold text-primary">30</span> 经验值！</p>
+            <div class="mb-4">
+                <div class="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
+                    <div id="new-exp-progress" class="h-full bg-accent" style="width: 50%"></div>
+                </div>
+                <p class="text-xs text-gray-500 mt-1">距离下一级还需 <span id="new-exp-remaining">50</span> 经验</p>
+            </div>
+            <button id="close-reward-btn" class="btn-primary">继续加油</button>
+        </div>
+    </div>
+
+    <script>
+        // 应用状态
+        const appState = {
+            // 计时器状态
+            timer: {
+                isRunning: false,
+                isPaused: false,
+                currentTime: 25 * 60, // 秒
+                totalTime: 25 * 60,   // 秒
+                sessionType: 'work',  // 'work', 'shortBreak', 'longBreak'
+                sessionCount: 0       // 完成的工作会话数
+            },
+            
+            // 用户状态
+            user: {
+                level: 1,
+                exp: 30,
+                expToNext: 100,
+                streakDays: 3,
+                totalPomodoros: 0,
+                totalFocusTime: 0 // 分钟
+            },
+            
+            // 设置
+            settings: {
+                workTime: 25,
+                shortBreakTime: 5,
+                longBreakTime: 15,
+                soundEnabled: true,
+                vibrationEnabled: true
+            },
+            
+            // 任务列表
+            tasks: [
+                { id: 1, title: '完成项目报告', priority: '重要', completed: false },
+                { id: 2, title: '学习前端框架', priority: '常规', completed: false }
+            ],
+            
+            // 当前任务
+            currentTask: null,
+            
+            // 统计数据
+            stats: {
+                day: {
+                    labels: ['9:00', '10:00', '11:00', '14:00', '15:00', '16:00', '17:00'],
+                    data: [25, 0, 50, 0, 25, 25, 0] // 分钟
+                },
+                week: {
+                    labels: ['周一', '周二', '周三', '周四', '周五', '周六', '周日'],
+                    data: [120, 90, 150, 60, 180, 30, 0] // 分钟
+                },
+                month: {
+                    labels: ['第1周', '第2周', '第3周', '第4周'],
+                    data: [450, 520, 380, 240] // 分钟
+                }
+            },
+            
+            // 排行榜数据
+            rankings: {
+                friends: [
+                    { id: 1, name: '番茄大神', avatar: 'https://p3-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/rc/pc/super_tool/719e751681da403a9bd7d657866b1f4f~tplv-a9rns2rl98-image.image?lk3s=8e244e95&rcl=202605021532044598EFF75513D9C5E631&rrcfp=f06b921b&x-expires=1780299150&x-signature=UDbP3IxOA7UyiLx962Qg5o99hr4%3D', score: 1250, todayFocus: '5小时20分', rank: 1 },
+                    { id: 2, name: '专注达人', avatar: 'https://p3-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/rc/pc/super_tool/5a3dfe4760c2475dbd545aa42b9d0832~tplv-a9rns2rl98-image.image?lk3s=8e244e95&rcl=202605021532044598EFF75513D9C5E631&rrcfp=f06b921b&x-expires=1780299149&x-signature=9dzNvUKrFO%2FK5JkSVjDBlLV4swo%3D', score: 1080, todayFocus: '4小时45分', rank: 2 },
+                    { id: 3, name: '学习小能手', avatar: 'https://p26-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/rc/pc/super_tool/0ce9464c064b423798600e6fd70971b3~tplv-a9rns2rl98-image.image?lk3s=8e244e95&rcl=202605021532044598EFF75513D9C5E631&rrcfp=f06b921b&x-expires=1780299151&x-signature=2pAAbs0GfVmWXFamGktj1AiftG8%3D', score: 920, todayFocus: '3小时15分', rank: 3 },
+                    { id: 4, name: '你', avatar: 'https://p3-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/rc/pc/super_tool/d4afd5f2f42c4099a9004191fde51d81~tplv-a9rns2rl98-image.image?lk3s=8e244e95&rcl=202605021532044598EFF75513D9C5E631&rrcfp=f06b921b&x-expires=1780299149&x-signature=fc%2BRyxhUIS5RRCiKCBF59GMsShs%3D', score: 520, todayFocus: '1小时30分', rank: 8 }
+                ],
+                global: [
+                    { id: 1, name: '全球第一', avatar: 'https://p26-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/rc/pc/super_tool/c6c450122d014117a3635f90200d925a~tplv-a9rns2rl98-image.image?lk3s=8e244e95&rcl=202605021532044598EFF75513D9C5E631&rrcfp=f06b921b&x-expires=1780299153&x-signature=kjchdk%2BQw%2F0skdxTsNzdQGZA128%3D', score: 5200, todayFocus: '8小时45分', rank: 1 },
+                    { id: 2, name: '专注王者', avatar: 'https://p3-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/rc/pc/super_tool/719e751681da403a9bd7d657866b1f4f~tplv-a9rns2rl98-image.image?lk3s=8e244e95&rcl=202605021532044598EFF75513D9C5E631&rrcfp=f06b921b&x-expires=1780299150&x-signature=UDbP3IxOA7UyiLx962Qg5o99hr4%3D', score: 4850, todayFocus: '7小时30分', rank: 2 },
+                    { id: 3, name: '番茄大师', avatar: 'https://p3-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/rc/pc/super_tool/5a3dfe4760c2475dbd545aa42b9d0832~tplv-a9rns2rl98-image.image?lk3s=8e244e95&rcl=202605021532044598EFF75513D9C5E631&rrcfp=f06b921b&x-expires=1780299149&x-signature=9dzNvUKrFO%2FK5JkSVjDBlLV4swo%3D', score: 4200, todayFocus: '6小时15分', rank: 3 },
+                    { id: 4, name: '你', avatar: 'https://p3-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/rc/pc/super_tool/d4afd5f2f42c4099a9004191fde51d81~tplv-a9rns2rl98-image.image?lk3s=8e244e95&rcl=202605021532044598EFF75513D9C5E631&rrcfp=f06b921b&x-expires=1780299149&x-signature=fc%2BRyxhUIS5RRCiKCBF59GMsShs%3D', score: 520, todayFocus: '1小时30分', rank: 128 }
+                ]
+            },
+            
+            // 番茄成长阶段
+            tomatoStages: [
+                { level: 1, image: 'https://p26-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/rc/pc/super_tool/0ce9464c064b423798600e6fd70971b3~tplv-a9rns2rl98-image.image?lk3s=8e244e95&rcl=202605021532044598EFF75513D9C5E631&rrcfp=f06b921b&x-expires=1780299151&x-signature=2pAAbs0GfVmWXFamGktj1AiftG8%3D', name: '幼苗番茄' },
+                { level: 2, image: 'https://p3-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/rc/pc/super_tool/d4afd5f2f42c4099a9004191fde51d81~tplv-a9rns2rl98-image.image?lk3s=8e244e95&rcl=202605021532044598EFF75513D9C5E631&rrcfp=f06b921b&x-expires=1780299149&x-signature=fc%2BRyxhUIS5RRCiKCBF59GMsShs%3D', name: '小番茄' },
+                { level: 3, image: 'https://p3-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/rc/pc/super_tool/5a3dfe4760c2475dbd545aa42b9d0832~tplv-a9rns2rl98-image.image?lk3s=8e244e95&rcl=202605021532044598EFF75513D9C5E631&rrcfp=f06b921b&x-expires=1780299149&x-signature=9dzNvUKrFO%2FK5JkSVjDBlLV4swo%3D', name: '中等番茄' },
+                { level: 4, image: 'https://p3-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/rc/pc/super_tool/719e751681da403a9bd7d657866b1f4f~tplv-a9rns2rl98-image.image?lk3s=8e244e95&rcl=202605021532044598EFF75513D9C5E631&rrcfp=f06b921b&x-expires=1780299150&x-signature=UDbP3IxOA7UyiLx962Qg5o99hr4%3D', name: '成熟番茄' },
+                { level: 5, image: 'https://p26-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/rc/pc/super_tool/c6c450122d014117a3635f90200d925a~tplv-a9rns2rl98-image.image?lk3s=8e244e95&rcl=202605021532044598EFF75513D9C5E631&rrcfp=f06b921b&x-expires=1780299153&x-signature=kjchdk%2BQw%2F0skdxTsNzdQGZA128%3D', name: '超级番茄' }
+            ],
+            
+            // 计时器实例
+            timerInterval: null
+        };
+        
+        // DOM 元素
+        const elements = {
+            // 计时器相关
+            timeDisplay: document.getElementById('time-display'),
+            sessionLabel: document.getElementById('session-label'),
+            sessionType: document.getElementById('session-type'),
+            progressRing: document.getElementById('progress-ring'),
+            startBtn: document.getElementById('start-btn'),
+            pauseBtn: document.getElementById('pause-btn'),
+            resetBtn: document.getElementById('reset-btn'),
+            
+            // 用户信息相关
+            userAvatar: document.getElementById('user-avatar'),
+            userLevel: document.getElementById('user-level'),
+            expProgress: document.getElementById('exp-progress'),
+            expRemaining: document.getElementById('exp-remaining'),
+            
+            // 任务相关
+            quickTasks: document.getElementById('quick-tasks'),
+            currentTask: document.getElementById('current-task'),
+            addTaskBtn: document.getElementById('add-task-btn'),
+            addTaskModal: document.getElementById('add-task-modal'),
+            taskForm: document.getElementById('task-form'),
+            taskTitle: document.getElementById('task-title'),
+            taskPriority: document.getElementById('task-priority'),
+            cancelTaskBtn: document.getElementById('cancel-task-btn'),
+            
+            // 设置相关
+            settingsBtn: document.getElementById('settings-btn'),
+            settingsModal: document.getElementById('settings-modal'),
+            closeSettingsBtn: document.getElementById('close-settings-btn'),
+            workTime: document.getElementById('work-time'),
+            shortBreak: document.getElementById('short-break'),
+            longBreak: document.getElementById('long-break'),
+            soundToggle: document.getElementById('sound-toggle'),
+            vibrationToggle: document.getElementById('vibration-toggle'),
+            saveSettingsBtn: document.getElementById('save-settings-btn'),
+            
+            // 快速调整时间相关
+            currentModeLabel: document.getElementById('current-mode-label'),
+            workTimeDisplay: document.getElementById('work-time-display'),
+            workTimeSlider: document.getElementById('work-time-slider'),
+            decreaseWorkTimeBtn: document.getElementById('decrease-work-time'),
+            increaseWorkTimeBtn: document.getElementById('increase-work-time'),
+            breakTimeDisplay: document.getElementById('break-time-display'),
+            breakTimeSlider: document.getElementById('break-time-slider'),
+            decreaseBreakTimeBtn: document.getElementById('decrease-break-time'),
+            increaseBreakTimeBtn: document.getElementById('increase-break-time'),
+            
+            // 奖励相关
+            rewardModal: document.getElementById('reward-modal'),
+            rewardImage: document.getElementById('reward-image'),
+            expGained: document.getElementById('exp-gained'),
+            newExpProgress: document.getElementById('new-exp-progress'),
+            newExpRemaining: document.getElementById('new-exp-remaining'),
+            closeRewardBtn: document.getElementById('close-reward-btn'),
+            
+            // 导航相关
+            navBtns: document.querySelectorAll('.nav-btn'),
+            pages: document.querySelectorAll('.page'),
+            
+            // 统计相关
+            statTabs: document.querySelectorAll('.stat-tab'),
+            statsChart: document.getElementById('stats-chart'),
+            totalTime: document.getElementById('total-time'),
+            totalPomodoros: document.getElementById('total-pomodoros'),
+            streakDays: document.getElementById('streak-days'),
+            
+            // 排行榜相关
+            rankingTabs: document.querySelectorAll('.ranking-tab')
+        };
+        
+        // 图表实例
+        let statsChart = null;
+        
+        // 初始化应用
+        function initApp() {
+            // 加载设置
+            loadSettings();
+            
+            // 初始化计时器
+            updateTimerDisplay();
+            
+            // 渲染任务列表
+            renderTasks();
+            
+            // 初始化统计图表
+            initStatsChart('day');
+            
+            // 绑定事件
+            bindEvents();
+            
+            // 更新用户信息显示
+            updateUserInfo();
+            
+            // 初始化快速调整UI
+            updateQuickAdjustUI();
+        }
+        
+        // 加载设置
+        function loadSettings() {
+            const savedSettings = localStorage.getItem('tomatoSettings');
+            if (savedSettings) {
+                appState.settings = { ...appState.settings, ...JSON.parse(savedSettings) };
+                
+                // 更新设置表单
+                elements.workTime.value = appState.settings.workTime;
+                elements.shortBreak.value = appState.settings.shortBreakTime;
+                elements.longBreak.value = appState.settings.longBreakTime;
+                elements.soundToggle.checked = appState.settings.soundEnabled;
+                elements.vibrationToggle.checked = appState.settings.vibrationEnabled;
+            }
+            
+            // 更新计时器设置
+            resetTimer('work');
+        }
+        
+        // 保存设置
+        function saveSettings() {
+            localStorage.setItem('tomatoSettings', JSON.stringify(appState.settings));
+        }
+        
+        // 绑定事件
+        function bindEvents() {
+            // 计时器控制
+            elements.startBtn.addEventListener('click', startTimer);
+            elements.pauseBtn.addEventListener('click', pauseTimer);
+            elements.resetBtn.addEventListener('click', resetTimer);
+            
+            // 任务管理
+            elements.addTaskBtn.addEventListener('click', showAddTaskModal);
+            elements.taskForm.addEventListener('submit', handleAddTask);
+            elements.cancelTaskBtn.addEventListener('click', hideAddTaskModal);
+            
+            // 设置管理
+            elements.settingsBtn.addEventListener('click', showSettingsModal);
+            elements.closeSettingsBtn.addEventListener('click', hideSettingsModal);
+            elements.saveSettingsBtn.addEventListener('click', saveUserSettings);
+            
+            // 快速调整时间
+            elements.decreaseWorkTimeBtn.addEventListener('click', () => adjustWorkTime(-5));
+            elements.increaseWorkTimeBtn.addEventListener('click', () => adjustWorkTime(5));
+            elements.workTimeSlider.addEventListener('input', (e) => setWorkTime(parseInt(e.target.value)));
+            
+            elements.decreaseBreakTimeBtn.addEventListener('click', () => adjustBreakTime(-1));
+            elements.increaseBreakTimeBtn.addEventListener('click', () => adjustBreakTime(1));
+            elements.breakTimeSlider.addEventListener('input', (e) => setBreakTime(parseInt(e.target.value)));
+            
+            // 奖励模态框
+            elements.closeRewardBtn.addEventListener('click', hideRewardModal);
+            
+            // 导航
+            elements.navBtns.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const pageId = btn.dataset.page;
+                    showPage(pageId);
+                    
+                    // 高亮当前导航按钮
+                    elements.navBtns.forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                });
+            });
+            
+            // 统计选项卡
+            elements.statTabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    const period = tab.dataset.period;
+                    
+                    // 高亮当前选项卡
+                    elements.statTabs.forEach(t => t.classList.remove('tab-active'));
+                    tab.classList.add('tab-active');
+                    
+                    // 更新图表
+                    updateStatsChart(period);
+                });
+            });
+            
+            // 排行榜选项卡
+            elements.rankingTabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    const type = tab.dataset.type;
+                    
+                    // 高亮当前选项卡
+                    elements.rankingTabs.forEach(t => t.classList.remove('tab-active'));
+                    tab.classList.add('tab-active');
+                    
+                    // 更新排行榜
+                    // updateRankings(type);
+                });
+            });
+        }
+        
+        // 显示页面
+        function showPage(pageId) {
+            elements.pages.forEach(page => {
+                page.classList.add('hidden');
+            });
+            
+            document.getElementById(pageId).classList.remove('hidden');
+            
+            // 如果是统计页面，更新图表大小
+            if (pageId === 'stats-page' && statsChart) {
+                statsChart.resize();
+            }
+        }
+        
+        // 开始计时器
+        function startTimer() {
+            if (appState.timer.isRunning && appState.timer.isPaused) {
+                // 恢复暂停的计时器
+                appState.timer.isPaused = false;
+            } else if (!appState.timer.isRunning) {
+                // 开始新的计时器
+                appState.timer.isRunning = true;
+                appState.timer.isPaused = false;
+            }
+            
+            // 更新UI
+            elements.startBtn.classList.add('hidden');
+            elements.pauseBtn.classList.remove('hidden');
+            
+            // 启动计时器
+            appState.timerInterval = setInterval(() => {
+                if (!appState.timer.isPaused) {
+                    appState.timer.currentTime--;
+                    updateTimerDisplay();
+                    
+                    // 检查计时器是否结束
+                    if (appState.timer.currentTime <= 0) {
+                        completeSession();
+                    }
+                }
+            }, 1000);
+        }
+        
+        // 暂停计时器
+        function pauseTimer() {
+            appState.timer.isPaused = true;
+            
+            // 更新UI
+            elements.startBtn.classList.remove('hidden');
+            elements.pauseBtn.classList.add('hidden');
+        }
+        
+        // 重置计时器
+        function resetTimer(sessionType = null) {
+            // 清除计时器
+            clearInterval(appState.timerInterval);
+            
+            // 如果指定了会话类型，则切换到该类型
+            if (sessionType) {
+                appState.timer.sessionType = sessionType;
+                
+                // 根据会话类型设置时间
+                switch (sessionType) {
+                    case 'work':
+                        appState.timer.totalTime = appState.settings.workTime * 60;
+                        appState.timer.currentTime = appState.settings.workTime * 60;
+                        elements.sessionLabel.textContent = '专注工作';
+                        elements.sessionType.textContent = '工作时间';
+                        elements.sessionType.className = 'badge-primary';
+                        break;
+                    case 'shortBreak':
+                        appState.timer.totalTime = appState.settings.shortBreakTime * 60;
+                        appState.timer.currentTime = appState.settings.shortBreakTime * 60;
+                        elements.sessionLabel.textContent = '短休息';
+                        elements.sessionType.textContent = '休息时间';
+                        elements.sessionType.className = 'badge-secondary';
+                        break;
+                    case 'longBreak':
+                        appState.timer.totalTime = appState.settings.longBreakTime * 60;
+                        appState.timer.currentTime = appState.settings.longBreakTime * 60;
+                        elements.sessionLabel.textContent = '长休息';
+                        elements.sessionType.textContent = '休息时间';
+                        elements.sessionType.className = 'badge-secondary';
+                        break;
+                }
+            } else {
+                // 否则重置为当前会话类型的初始时间
+                switch (appState.timer.sessionType) {
+                    case 'work':
+                        appState.timer.currentTime = appState.settings.workTime * 60;
+                        break;
+                    case 'shortBreak':
+                        appState.timer.currentTime = appState.settings.shortBreakTime * 60;
+                        break;
+                    case 'longBreak':
+                        appState.timer.currentTime = appState.settings.longBreakTime * 60;
+                        break;
+                }
+            }
+            
+            // 重置状态
+            appState.timer.isRunning = false;
+            appState.timer.isPaused = false;
+            
+            // 更新UI
+            elements.startBtn.classList.remove('hidden');
+            elements.pauseBtn.classList.add('hidden');
+            
+            // 更新当前模式标签
+            updateCurrentModeLabel();
+            
+            // 更新计时器显示
+            updateTimerDisplay();
+        }
+        
+        // 更新计时器显示
+        function updateTimerDisplay() {
+            // 计算分钟和秒
+            const minutes = Math.floor(appState.timer.currentTime / 60);
+            const seconds = appState.timer.currentTime % 60;
+            
+            // 更新时间显示
+            elements.timeDisplay.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            
+            // 更新进度环
+            const circumference = 2 * Math.PI * 40; // 圆的周长
+            const offset = circumference - (appState.timer.currentTime / appState.timer.totalTime) * circumference;
+            elements.progressRing.style.strokeDasharray = `${circumference} ${circumference}`;
+            elements.progressRing.style.strokeDashoffset = offset;
+        }
+        
+        // 完成当前会话
+        function completeSession() {
+            // 清除计时器
+            clearInterval(appState.timerInterval);
+            appState.timer.isRunning = false;
+            
+            // 根据会话类型进行处理
+            if (appState.timer.sessionType === 'work') {
+                // 完成工作会话
+                appState.timer.sessionCount++;
+                appState.user.totalPomodoros++;
+                appState.user.totalFocusTime += appState.settings.workTime;
+                
+                // 增加经验值
+                const expGained = 30; // 每个番茄钟获得30经验
+                gainExperience(expGained);
+                
+                // 播放完成音效和震动
+                playNotification();
+                
+                // 显示奖励模态框
+                showRewardModal(expGained);
+                
+                // 检查是否需要长休息
+                if (appState.timer.sessionCount % 4 === 0) {
+                    // 每4个工作会话后进行一次长休息
+                    resetTimer('longBreak');
+                } else {
+                    // 否则进行短休息
+                    resetTimer('shortBreak');
+                }
+            } else {
+                // 完成休息会话，开始工作
+                playNotification();
+                resetTimer('work');
+            }
+            
+            // 更新统计数据
+            updateStats();
+            
+            // 更新UI
+            elements.startBtn.classList.remove('hidden');
+            elements.pauseBtn.classList.add('hidden');
+        }
+        
+        // 播放通知
+        function playNotification() {
+            // 播放音效
+            if (appState.settings.soundEnabled) {
+                const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2000/2000-preview.mp3');
+                audio.play().catch(e => console.log('无法播放音效:', e));
+            }
+            
+            // 震动
+            if (appState.settings.vibrationEnabled && navigator.vibrate) {
+                navigator.vibrate([200, 100, 200]);
+            }
+        }
+        
+        // 获得经验值
+        function gainExperience(amount) {
+            appState.user.exp += amount;
+            
+            // 检查是否升级
+            while (appState.user.exp >= appState.user.expToNext) {
+                // 升级
+                appState.user.exp -= appState.user.expToNext;
+                appState.user.level++;
+                
+                // 增加下一级所需经验
+                appState.user.expToNext = Math.floor(appState.user.expToNext * 1.5);
+                
+                // 更新用户头像
+                updateUserAvatar();
+            }
+            
+            // 更新用户信息显示
+            updateUserInfo();
+        }
+        
+        // 更新用户信息显示
+        function updateUserInfo() {
+            // 更新等级
+            elements.userLevel.textContent = appState.user.level;
+            
+            // 更新经验条
+            const expPercentage = (appState.user.exp / appState.user.expToNext) * 100;
+            elements.expProgress.style.width = `${expPercentage}%`;
+            
+            // 更新剩余经验
+            elements.expRemaining.textContent = appState.user.expToNext - appState.user.exp;
+            
+            // 更新连续天数
+            elements.streakDays.textContent = `${appState.user.streakDays}天`;
+            
+            // 更新总专注时长
+            const hours = Math.floor(appState.user.totalFocusTime / 60);
+            const minutes = appState.user.totalFocusTime % 60;
+            elements.totalTime.textContent = minutes > 0 ? `${hours}.${Math.floor(minutes / 6)}小时` : `${hours}小时`;
+            
+            // 更新总番茄钟数
+            elements.totalPomodoros.textContent = `${appState.user.totalPomodoros}个`;
+        }
+        
+        // 更新用户头像
+        function updateUserAvatar() {
+            // 获取当前等级对应的番茄形象
+            const stage = appState.tomatoStages.find(s => s.level <= appState.user.level) || appState.tomatoStages[0];
+            
+            // 更新头像
+            elements.userAvatar.src = stage.image;
+        }
+        
+        // 渲染任务列表
+        function renderTasks() {
+            elements.quickTasks.innerHTML = '';
+            
+            if (appState.tasks.length === 0) {
+                elements.quickTasks.innerHTML = '<p class="text-gray-500 text-center py-4">暂无任务，点击"+"添加</p>';
+                return;
+            }
+            
+            appState.tasks.forEach(task => {
+                const taskElement = document.createElement('div');
+                taskElement.className = 'task-item p-3 bg-gray-50 rounded-lg flex justify-between items-center';
+                taskElement.innerHTML = `
+                    <div class="flex items-center">
+                        <input type="checkbox" class="task-checkbox w-4 h-4 text-primary rounded focus:ring-primary mr-2" ${task.completed ? 'checked' : ''}>
+                        <span class="task-text ${task.completed ? 'line-through text-gray-500' : ''}">${task.title}</span>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <span class="badge-${task.priority === '重要' ? 'primary' : task.priority === '紧急' ? 'red' : 'secondary'}">${task.priority}</span>
+                        <button class="text-gray-400 hover:text-gray-600 task-delete">
+                            <i class="fa fa-trash-o"></i>
+                        </button>
+                    </div>
+                `;
+                
+                // 添加点击事件
+                const checkbox = taskElement.querySelector('.task-checkbox');
+                checkbox.addEventListener('change', () => toggleTask(task.id));
+                
+                // 添加删除事件
+                const deleteBtn = taskElement.querySelector('.task-delete');
+                deleteBtn.addEventListener('click', () => deleteTask(task.id));
+                
+                // 添加任务点击事件（开始计时）
+                taskElement.addEventListener('click', (e) => {
+                    // 如果点击的是复选框或删除按钮，不执行任务选择
+                    if (e.target === checkbox || e.target === deleteBtn || e.target === deleteBtn.querySelector('i')) {
+                        return;
+                    }
+                    
+                    selectTask(task.id);
+                });
+                
+                elements.quickTasks.appendChild(taskElement);
+            });
+            
+            // 更新当前任务显示
+            updateCurrentTask();
+        }
+        
+        // 切换任务完成状态
+        function toggleTask(taskId) {
+            const task = appState.tasks.find(t => t.id === taskId);
+            if (task) {
+                task.completed = !task.completed;
+                renderTasks();
+            }
+        }
+        
+        // 删除任务
+        function deleteTask(taskId) {
+            appState.tasks = appState.tasks.filter(t => t.id !== taskId);
+            
+            // 如果删除的是当前任务，清除当前任务
+            if (appState.currentTask && appState.currentTask.id === taskId) {
+                appState.currentTask = null;
+            }
+            
+            renderTasks();
+        }
+        
+        // 选择任务
+        function selectTask(taskId) {
+            const task = appState.tasks.find(t => t.id === taskId);
+            if (task && !task.completed) {
+                appState.currentTask = task;
+                updateCurrentTask();
+                
+                // 如果计时器没有运行，重置为工作模式
+                if (!appState.timer.isRunning) {
+                    resetTimer('work');
+                }
+            }
+        }
+        
+        // 更新当前任务显示
+        function updateCurrentTask() {
+            if (appState.currentTask) {
+                elements.currentTask.innerHTML = `
+                    <div class="flex items-center justify-between">
+                        <span class="font-medium">${appState.currentTask.title}</span>
+                        <span class="badge-${appState.currentTask.priority === '重要' ? 'primary' : appState.currentTask.priority === '紧急' ? 'red' : 'secondary'}">${appState.currentTask.priority}</span>
+                    </div>
+                    <p class="text-sm text-gray-500 mt-1">点击开始专注</p>
+                `;
+            } else {
+                elements.currentTask.innerHTML = '<p class="text-gray-500 text-center">暂无进行中的任务</p>';
+            }
+        }
+        
+        // 显示添加任务模态框
+        function showAddTaskModal() {
+            elements.addTaskModal.classList.remove('hidden');
+            elements.taskTitle.focus();
+        }
+        
+        // 隐藏添加任务模态框
+        function hideAddTaskModal() {
+            elements.addTaskModal.classList.add('hidden');
+            elements.taskForm.reset();
+        }
+        
+        // 处理添加任务
+        function handleAddTask(e) {
+            e.preventDefault();
+            
+            const title = elements.taskTitle.value.trim();
+            const priority = elements.taskPriority.value;
+            
+            if (title) {
+                // 创建新任务
+                const newTask = {
+                    id: Date.now(),
+                    title,
+                    priority,
+                    completed: false
+                };
+                
+                // 添加到任务列表
+                appState.tasks.push(newTask);
+                
+                // 重新渲染任务列表
+                renderTasks();
+                
+                // 隐藏模态框
+                hideAddTaskModal();
+            }
+        }
+        
+        // 显示设置模态框
+        function showSettingsModal() {
+            elements.settingsModal.classList.remove('hidden');
+        }
+        
+        // 隐藏设置模态框
+        function hideSettingsModal() {
+            elements.settingsModal.classList.add('hidden');
+        }
+        
+        // 保存用户设置
+        function saveUserSettings() {
+            // 获取表单值
+            appState.settings.workTime = parseInt(elements.workTime.value);
+            appState.settings.shortBreakTime = parseInt(elements.shortBreak.value);
+            appState.settings.longBreakTime = parseInt(elements.longBreak.value);
+            appState.settings.soundEnabled = elements.soundToggle.checked;
+            appState.settings.vibrationEnabled = elements.vibrationToggle.checked;
+            
+            // 保存设置
+            saveSettings();
+            
+            // 更新快速调整UI
+            updateQuickAdjustUI();
+            
+            // 如果计时器没有运行，更新计时器设置
+            if (!appState.timer.isRunning) {
+                resetTimer(appState.timer.sessionType);
+            }
+            
+            // 隐藏模态框
+            hideSettingsModal();
+        }
+        
+        // 调整工作时间
+        function adjustWorkTime(change) {
+            const newTime = Math.max(1, Math.min(60, appState.settings.workTime + change));
+            setWorkTime(newTime);
+        }
+        
+        // 设置工作时间
+        function setWorkTime(minutes) {
+            appState.settings.workTime = minutes;
+            
+            // 更新快速调整UI
+            elements.workTimeDisplay.textContent = minutes;
+            elements.workTimeSlider.value = minutes;
+            
+            // 同步更新设置模态框
+            elements.workTime.value = minutes;
+            
+            // 保存设置
+            saveSettings();
+            
+            // 如果当前是工作模式且计时器没有运行，更新计时器
+            if (appState.timer.sessionType === 'work' && !appState.timer.isRunning) {
+                resetTimer('work');
+            }
+        }
+        
+        // 调整休息时间
+        function adjustBreakTime(change) {
+            const newTime = Math.max(1, Math.min(30, appState.settings.shortBreakTime + change));
+            setBreakTime(newTime);
+        }
+        
+        // 设置休息时间
+        function setBreakTime(minutes) {
+            appState.settings.shortBreakTime = minutes;
+            
+            // 更新快速调整UI
+            elements.breakTimeDisplay.textContent = minutes;
+            elements.breakTimeSlider.value = minutes;
+            
+            // 同步更新设置模态框
+            elements.shortBreak.value = minutes;
+            
+            // 保存设置
+            saveSettings();
+            
+            // 如果当前是休息模式且计时器没有运行，更新计时器
+            if ((appState.timer.sessionType === 'shortBreak' || appState.timer.sessionType === 'longBreak') && !appState.timer.isRunning) {
+                resetTimer(appState.timer.sessionType);
+            }
+        }
+        
+        // 更新快速调整UI
+        function updateQuickAdjustUI() {
+            // 更新工作时间
+            elements.workTimeDisplay.textContent = appState.settings.workTime;
+            elements.workTimeSlider.value = appState.settings.workTime;
+            
+            // 更新休息时间
+            elements.breakTimeDisplay.textContent = appState.settings.shortBreakTime;
+            elements.breakTimeSlider.value = appState.settings.shortBreakTime;
+            
+            // 更新当前模式标签
+            updateCurrentModeLabel();
+        }
+        
+        // 更新当前模式标签
+        function updateCurrentModeLabel() {
+            if (appState.timer.sessionType === 'work') {
+                elements.currentModeLabel.textContent = '工作模式';
+                elements.currentModeLabel.className = 'text-xs badge-primary';
+            } else {
+                elements.currentModeLabel.textContent = appState.timer.sessionType === 'shortBreak' ? '短休息' : '长休息';
+                elements.currentModeLabel.className = 'text-xs badge-secondary';
+            }
+        }
+        
+        // 显示奖励模态框
+        function showRewardModal(expGained) {
+            // 设置奖励图片
+            elements.rewardImage.src = elements.userAvatar.src;
+            
+            // 设置获得的经验值
+            elements.expGained.textContent = expGained;
+            
+            // 设置新的经验条
+            const expPercentage = (appState.user.exp / appState.user.expToNext) * 100;
+            elements.newExpProgress.style.width = `${expPercentage}%`;
+            
+            // 设置剩余经验
+            elements.newExpRemaining.textContent = appState.user.expToNext - appState.user.exp;
+            
+            // 显示模态框
+            elements.rewardModal.classList.remove('hidden');
+        }
+        
+        // 隐藏奖励模态框
+        function hideRewardModal() {
+            elements.rewardModal.classList.add('hidden');
+        }
+        
+        // 初始化统计图表
+        function initStatsChart(period) {
+            const ctx = elements.statsChart.getContext('2d');
+            
+            // 获取统计数据
+            const stats = appState.stats[period];
+            
+            // 创建图表
+            statsChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: stats.labels,
+                    datasets: [{
+                        label: '专注时长（分钟）',
+                        data: stats.data,
+                        backgroundColor: '#FF6B6B',
+                        borderRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: {
+                                display: true,
+                                color: 'rgba(0, 0, 0, 0.05)'
+                            }
+                        },
+                        x: {
+                            grid: {
+                                display: false
+                            }
+                        }
+                    }
+                }
+            });
+            
+            // 更新统计数据显示
+            updateStatsDisplay(period);
+        }
+        
+        // 更新统计图表
+        function updateStatsChart(period) {
+            // 获取统计数据
+            const stats = appState.stats[period];
+            
+            // 更新图表数据
+            statsChart.data.labels = stats.labels;
+            statsChart.data.datasets[0].data = stats.data;
+            statsChart.update();
+            
+            // 更新统计数据显示
+            updateStatsDisplay(period);
+        }
+        
+        // 更新统计数据显示
+        function updateStatsDisplay(period) {
+            // 计算总专注时长
+            const totalMinutes = appState.stats[period].data.reduce((sum, value) => sum + value, 0);
+            const hours = Math.floor(totalMinutes / 60);
+            const minutes = totalMinutes % 60;
+            
+            // 更新总时长显示
+            if (minutes > 0) {
+                elements.totalTime.textContent = `${hours}.${Math.floor(minutes / 6)}小时`;
+            } else {
+                elements.totalTime.textContent = `${hours}小时`;
+            }
+            
+            // 计算番茄钟数量（假设每个番茄钟25分钟）
+            const pomodoros = Math.floor(totalMinutes / 25);
+            elements.totalPomodoros.textContent = `${pomodoros}个`;
+        }
+        
+        // 更新统计数据
+        function updateStats() {
+            // 更新今日统计（简单示例，实际应用中可能需要更复杂的日期处理）
+            const todayIndex = appState.stats.day.data.length - 1;
+            appState.stats.day.data[todayIndex] += appState.settings.workTime;
+            
+            // 更新本周统计
+            const weekIndex = appState.stats.week.data.length - 1;
+            appState.stats.week.data[weekIndex] += appState.settings.workTime;
+            
+            // 更新本月统计
+            const monthIndex = appState.stats.month.data.length - 1;
+            appState.stats.month.data[monthIndex] += appState.settings.workTime;
+            
+            // 如果统计页面是当前页面，更新图表
+            if (!document.getElementById('stats-page').classList.contains('hidden')) {
+                // 获取当前选中的统计周期
+                const activeTab = document.querySelector('.stat-tab.tab-active');
+                if (activeTab) {
+                    updateStatsChart(activeTab.dataset.period);
+                }
+            }
+        }
+        
+        // 初始化应用
+        document.addEventListener('DOMContentLoaded', initApp);
+    </script>
+</body>
+</html>

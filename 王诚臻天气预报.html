@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>实时天气预报 - 生活建议助手</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          animation: {
+            'fade-in': 'fadeIn 0.5s ease-in-out',
+            'slide-up': 'slideUp 0.5s ease-in-out',
+          },
+          keyframes: {
+            fadeIn: {'0%':{opacity:0},'100%':{opacity:1}},
+            slideUp: {'0%':{transform:'translateY(20px)',opacity:0},'100%':{transform:'translateY(0)',opacity:1}},
+          }
+        }
+      }
+    }
+  </script>
+  <style type="text/tailwindcss">
+    @layer utilities {
+      .glass-effect {
+        @apply bg-white/20 backdrop-blur-lg rounded-xl border border-white/20 shadow-lg;
+      }
+      .text-shadow { text-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+      .bg-gradient-all {
+        @apply bg-gradient-to-br transition-all duration-1000;
+      }
+    }
+  </style>
+</head>
+<body class="min-h-screen text-white bg-gradient-all from-blue-400 to-blue-600 transition-all duration-1000">
+  <div class="container mx-auto px-4 py-6 max-w-4xl">
+    <!-- 头部（纯中文） -->
+    <header class="mb-6 animate-fade-in">
+      <div class="flex justify-between items-center flex-wrap gap-3">
+        <div class="flex items-center">
+          <i class="fa fa-cloud text-3xl mr-2"></i>
+          <h1 class="text-2xl font-bold text-shadow">实时天气预报</h1>
+        </div>
+        <div class="flex items-center gap-2">
+          <input id="cityInput" placeholder="请输入城市名称" class="px-3 py-1.5 rounded-lg bg-white/20 border border-white/20 text-white placeholder-white/60 outline-none">
+          <button id="searchBtn" class="px-3 py-1.5 bg-white/20 rounded-lg hover:bg-white/30"><i class="fa fa-search"></i> 搜索</button>
+          <button id="bgSwitchBtn" class="px-3 py-1.5 bg-white/20 rounded-lg hover:bg-white/30" title="切换背景风格">
+            <i class="fa fa-picture-o"></i> 换背景
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- 实时天气模块（中文适配） -->
+    <section class="glass-effect p-5 mb-6 animate-slide-up">
+      <div class="flex justify-between items-center flex-wrap">
+        <div>
+          <h2 id="cityName" class="text-2xl font-bold">正在加载...</h2>
+          <p id="weatherTxt" class="text-lg opacity-90">--</p>
+          <div class="mt-2">
+            <span id="tempNow" class="text-5xl font-bold">--°C</span>
+            <span class="ml-2 opacity-80">最高:<span id="tempMax">--</span>°C 最低:<span id="tempMin">--</span>°C</span>
+          </div>
+        </div>
+        <div class="text-6xl mt-4 md:mt-0">
+          <i id="weatherIcon" class="fa fa-sun-o"></i>
+        </div>
+      </div>
+
+      <!-- 天气详情（中文标签） -->
+      <div class="grid grid-cols-4 gap-3 mt-6 text-center">
+        <div class="p-2 rounded-lg bg-white/10">
+          <i class="fa fa-tint text-xl"></i>
+          <p class="text-sm opacity-80">相对湿度</p>
+          <p id="humidity">--%</p>
+        </div>
+        <div class="p-2 rounded-lg bg-white/10">
+          <i class="fa fa-wind text-xl"></i>
+          <p class="text-sm opacity-80">风力风向</p>
+          <p id="wind">--</p>
+        </div>
+        <div class="p-2 rounded-lg bg-white/10">
+          <i class="fa fa-eye text-xl"></i>
+          <p class="text-sm opacity-80">能见度</p>
+          <p id="vis">-- 公里</p>
+        </div>
+        <div class="p-2 rounded-lg bg-white/10">
+          <i class="fa fa-dashboard text-xl"></i>
+          <p class="text-sm opacity-80">大气压强</p>
+          <p id="press">-- hPa</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 生活建议（中文接地气） -->
+    <section class="glass-effect p-5 animate-slide-up">
+      <h3 class="text-xl font-bold mb-4">实时生活建议</h3>
+      <div class="grid md:grid-cols-2 gap-4">
+        <!-- 穿衣建议 -->
+        <div class="p-4 rounded-lg bg-white/10 flex items-start">
+          <div class="w-10 h-10 rounded-full bg-purple-500 flex items-center justify-center mr-3">
+            <i class="fa fa-tshirt"></i>
+          </div>
+          <div>
+            <h4 class="font-medium">穿衣建议</h4>
+            <p id="clothesAdvice" class="text-sm opacity-80 mt-1">正在计算...</p>
+          </div>
+        </div>
+        <!-- 洗车建议 -->
+        <div class="p-4 rounded-lg bg-white/10 flex items-start">
+          <div class="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center mr-3">
+            <i class="fa fa-car"></i>
+          </div>
+          <div>
+            <h4 class="font-medium">洗车建议</h4>
+            <p id="washAdvice" class="text-sm opacity-80 mt-1">正在计算...</p>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    // 中文风格背景组
+    const bgList = [
+      'from-blue-400 to-blue-600',   // 晴空蓝
+      'from-yellow-300 to-orange-400',// 暖阳橙
+      'from-gray-300 to-gray-500',    // 多云灰
+      'from-blue-500 to-gray-600',    // 阴雨蓝
+      'from-pink-400 to-purple-500'   // 晚霞粉
+    ];
+    let bgIndex = 0;
+
+    // 切换背景（中文提示）
+    document.getElementById('bgSwitchBtn').addEventListener('click', ()=>{
+      bgIndex = (bgIndex + 1) % bgList.length;
+      document.body.className = 'min-h-screen text-white bg-gradient-all ' + bgList[bgIndex];
+      alert('背景已切换，共5种风格可选~'); // 中文提示
+    });
+
+    // 初始化默认城市（中文）
+    let city = '北京';
+    getWeather(city);
+
+    // 搜索城市（中文适配）
+    document.getElementById('searchBtn').addEventListener('click', ()=>{
+      city = document.getElementById('cityInput').value.trim() || '北京';
+      if(!city) {
+        alert('请输入有效的城市名称！'); // 中文提示
+        return;
+      }
+      getWeather(city);
+    });
+    document.getElementById('cityInput').addEventListener('keydown', e=>{
+      if(e.key === 'Enter'){
+        city = e.target.value.trim() || '北京';
+        if(!city) {
+          alert('请输入有效的城市名称！');
+          return;
+        }
+        getWeather(city);
+      }
+    });
+
+    // 获取实时天气（适配中文城市名）
+    async function getWeather(cityName){
+      try{
+        // 接口适配中文城市，返回中文天气描述
+        const res = await fetch(`https://wttr.in/${encodeURIComponent(cityName)}?format=j1`);
+        const data = await res.json();
+        
+        // 容错：城市不存在时提示
+        if(!data.current_condition || data.current_condition.length === 0){
+          alert(`未查询到「${cityName}」的天气数据，请检查城市名称是否正确！`);
+          return;
+        }
+
+        const now = data.current_condition[0];
+        const area = data.nearest_area[0];
+
+        // 赋值（全部中文展示）
+        document.getElementById('cityName').innerText = area.areaName[0].value;
+        document.getElementById('weatherTxt').innerText = now.weatherDesc[0].value; // 中文天气（晴/多云/小雨等）
+        document.getElementById('tempNow').innerText = `${now.temp_C}°C`;
+        document.getElementById('tempMax').innerText = data.weather[0].maxtempC;
+        document.getElementById('tempMin').innerText = data.weather[0].mintempC;
+        document.getElementById('humidity').innerText = `${now.humidity}%`;
+        document.getElementById('wind').innerText = `${now.winddir16Point} ${now.windspeedKmph}公里/小时`;
+        document.getElementById('vis').innerText = `${now.visibility}`;
+        document.getElementById('press').innerText = `${now.pressure}`;
+
+        // 天气图标（适配中文天气）
+        setIcon(now.weatherDesc[0].value);
+
+        // 实时生成中文生活建议
+        setLifeAdvice(now.weatherDesc[0].value, Number(now.temp_C), Number(now.humidity));
+
+      }catch(err){
+        document.getElementById('clothesAdvice').innerText = '天气数据获取失败，请稍后重试';
+        document.getElementById('washAdvice').innerText = '天气数据获取失败，无法判断';
+        console.error('天气接口错误：', err);
+      }
+    }
+
+    // 设置天气图标（适配中文天气描述）
+    function setIcon(weather){
+      let icon = 'fa-sun-o'; // 默认晴天
+      if(weather.includes('云')||weather.includes('阴')) icon = 'fa-cloud';
+      if(weather.includes('雨')||weather.includes('雷阵雨')) icon = 'fa-tint';
+      if(weather.includes('雪')||weather.includes('小雪')||weather.includes('大雪')) icon = 'fa-snowflake-o';
+      if(weather.includes('雾')||weather.includes('霾')) icon = 'fa-cloud';
+      document.getElementById('weatherIcon').className = `fa ${icon}`;
+    }
+
+    // 核心：中文生活建议（更接地气）
+    function setLifeAdvice(weather, temp, humidity){
+      // 穿衣建议（中文口语化）
+      let clothes = '';
+      if(temp < 5){
+        clothes = '天气严寒，建议穿羽绒服+厚毛衣+加绒裤，搭配围巾、手套、帽子全副保暖';
+      }else if(temp < 12){
+        clothes = '天气偏冷，建议穿厚外套+毛衣+长裤，早晚温差大，注意防风保暖';
+      }else if(temp < 20){
+        clothes = '天气凉爽舒适，建议穿长袖衬衫+薄外套/卫衣，日常穿搭即可';
+      }else if(temp < 28){
+        clothes = '天气温暖，建议穿短袖/长袖单衣，搭配薄长裤，透气舒适为主';
+      }else{
+        clothes = '天气炎热，建议穿短袖、短裤、连衣裙等清凉衣物，做好防晒降温';
+      }
+      // 附加提示（中文）
+      if(weather.includes('雨')) clothes += '；今日有降雨，记得携带雨伞/雨衣';
+      if(weather.includes('晴') && temp>28) clothes += '；阳光强烈，建议戴帽子、涂防晒霜';
+      if(weather.includes('风') && now.windspeedKmph>15) clothes += '；今日风力较大，建议穿防风外套';
+
+      // 洗车建议（中文直观）
+      let wash = '';
+      if(weather.includes('雨')||weather.includes('雪')||weather.includes('雷阵雨')){
+        wash = '❌ 不建议洗车：短期内有雨雪，洗完很快会弄脏';
+      }else if(humidity > 80){
+        wash = '⚠️ 谨慎洗车：空气湿度大，车身不易晾干，易沾灰';
+      }else if(weather.includes('晴')||weather.includes('多云')){
+        wash = '✅ 非常适合洗车：天气晴朗干燥，洗完易晾干，能保持更久';
+      }else{
+        wash = '✅ 可以洗车：建议选择午后阳光充足的时段清洗';
+      }
+
+      // 赋值到页面
+      document.getElementById('clothesAdvice').innerText = clothes;
+      document.getElementById('washAdvice').innerText = wash;
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,1861 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GitHub头像生成器</title>
+  <!-- Tailwind CSS v3 -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Font Awesome -->
+  <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+  <!-- 统一的 Tailwind 配置 -->
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: '#2563eb',
+            secondary: '#6366f1',
+            dark: '#1e293b',
+            light: '#f8fafc',
+            accent: '#f97316',
+            success: '#10b981',
+            warning: '#f59e0b',
+            error: '#ef4444',
+            info: '#3b82f6'
+          },
+          fontFamily: {
+            sans: ['Inter', 'system-ui', 'sans-serif'],
+          },
+          boxShadow: {
+            'inner-lg': 'inset 0 2px 4px 0 rgba(0, 0, 0, 0.06)',
+            'glass': '0 8px 32px 0 rgba(31, 38, 135, 0.37)',
+          },
+          animation: {
+            'bounce-slow': 'bounce 3s infinite',
+            'pulse-slow': 'pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+          }
+        }
+      }
+    }
+  </script>
+  <style type="text/tailwindcss">
+    @layer utilities {
+      .content-auto {
+        content-visibility: auto;
+      }
+      .glass-effect {
+        @apply bg-white bg-opacity-20 backdrop-filter backdrop-blur-lg;
+      }
+      .text-shadow {
+        text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      }
+      .transition-all-300 {
+        @apply transition-all duration-300 ease-in-out;
+      }
+      .scrollbar-hide::-webkit-scrollbar {
+        display: none;
+      }
+      .scrollbar-hide {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+      }
+    }
+  </style>
+  <style>
+    /* 自定义滑块样式 */
+    input[type="range"] {
+      -webkit-appearance: none;
+      height: 6px;
+      background: #e2e8f0;
+      border-radius: 5px;
+      background-image: linear-gradient(#3b82f6, #3b82f6);
+      background-repeat: no-repeat;
+    }
+
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      height: 18px;
+      width: 18px;
+      border-radius: 50%;
+      background: #3b82f6;
+      cursor: pointer;
+      box-shadow: 0 0 2px 0 #555;
+      transition: background .3s ease-in-out;
+    }
+
+    input[type="range"]::-webkit-slider-thumb:hover {
+      background: #2563eb;
+    }
+
+    input[type="range"]::-webkit-slider-runnable-track {
+      -webkit-appearance: none;
+      box-shadow: none;
+      border: none;
+      background: transparent;
+    }
+
+    /* 动画效果 */
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .animate-fadeIn {
+      animation: fadeIn 0.5s ease-out forwards;
+    }
+
+    /* 拖拽元素样式 */
+    .draggable {
+      cursor: move;
+      user-select: none;
+    }
+
+    /* 颜色选择器样式 */
+    .color-option {
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      cursor: pointer;
+      transition: transform 0.2s;
+    }
+
+    .color-option:hover {
+      transform: scale(1.1);
+    }
+
+    .color-option.active {
+      border: 3px solid #fff;
+      box-shadow: 0 0 0 2px #3b82f6;
+    }
+
+    /* 模板卡片悬停效果 */
+    .template-card {
+      transition: all 0.3s ease;
+    }
+
+    .template-card:hover {
+      transform: translateY(-5px);
+    }
+
+    .template-card.active {
+      border-color: #3b82f6;
+      box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.5);
+    }
+
+    /* 图标选项悬停效果 */
+    .icon-option {
+      transition: all 0.2s ease;
+    }
+
+    .icon-option:hover {
+      transform: scale(1.1);
+    }
+
+    .icon-option.active {
+      border-color: #3b82f6;
+      background-color: rgba(59, 130, 246, 0.1);
+    }
+
+    /* 形状选项样式 */
+    .shape-option {
+      transition: all 0.2s ease;
+    }
+
+    .shape-option:hover {
+      transform: scale(1.05);
+    }
+
+    .shape-option.active {
+      border-color: #3b82f6;
+      background-color: rgba(59, 130, 246, 0.1);
+    }
+  </style>
+</head>
+<body class="bg-gradient-to-br from-gray-900 to-gray-800 min-h-screen text-white font-sans">
+  <!-- 顶部导航栏 -->
+  <header class="bg-gray-900 bg-opacity-80 backdrop-blur-md border-b border-gray-700 sticky top-0 z-50">
+    <div class="container mx-auto px-4 py-4 flex justify-between items-center">
+      <div class="flex items-center space-x-3">
+        <svg class="w-8 h-8 text-primary" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+          <path fill-rule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" clip-rule="evenodd"></path>
+        </svg>
+        <h1 class="text-2xl font-bold text-shadow">GitHub头像生成器</h1>
+      </div>
+      <div class="flex items-center space-x-4">
+        <!-- 新增：GitHub 项目按钮 -->
+        <button id="githubProjectBtn" class="px-3 py-1 rounded-full bg-gray-700 hover:bg-gray-600 transition-all-300 flex items-center">
+          <i class="fa fa-github mr-2"></i>
+          <span class="hidden sm:inline">GitHub项目</span>
+        </button>
+        <button id="helpBtn" class="px-3 py-1 rounded-full bg-gray-700 hover:bg-gray-600 transition-all-300 flex items-center">
+          <i class="fa fa-question-circle mr-2"></i>
+          <span class="hidden sm:inline">帮助</span>
+        </button>
+        <button id="saveBtn" class="px-4 py-2 rounded-full bg-primary hover:bg-blue-600 transition-all-300 flex items-center">
+          <i class="fa fa-download mr-2"></i>
+          <span>导出头像</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- 主要内容区 -->
+  <main class="container mx-auto px-4 py-8">
+    <!-- 模板选择区 -->
+    <section class="mb-8 animate-fadeIn" style="animation-delay: 0.1s;">
+      <h2 class="text-xl font-semibold mb-4 flex items-center">
+        <i class="fa fa-th-large mr-2 text-primary"></i>
+        选择模板
+      </h2>
+      <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+        <!-- 模板卡片 -->
+        <div class="template-card active rounded-lg overflow-hidden border-2 border-transparent cursor-pointer" data-template="tech-blue">
+          <img src="https://p26-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/rc/pc/super_tool/07b25c53abea4e47b8c1907b3b43e84f~tplv-a9rns2rl98-image.image?lk3s=8e244e95&rcl=202604260947134ECB6A5DBE93EE38B459&rrcfp=f06b921b&x-expires=1779760070&x-signature=D4cvoXriWDH5va%2BMFySUT0qa26w%3D" alt="科技蓝" class="w-full h-24 object-cover">
+          <div class="p-2 text-center text-sm">科技蓝</div>
+        </div>
+        <div class="template-card rounded-lg overflow-hidden border-2 border-transparent cursor-pointer" data-template="minimal-black">
+          <img src="https://p6-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/rc/pc/super_tool/672d4f3be9bf4bac87e516da923df9ca~tplv-a9rns2rl98-image.image?lk3s=8e244e95&rcl=202604260947134ECB6A5DBE93EE38B459&rrcfp=f06b921b&x-expires=1779760073&x-signature=KMr54FQA4wIh30G1hjjCsVStqU8%3D" alt="简约黑" class="w-full h-24 object-cover">
+          <div class="p-2 text-center text-sm">简约黑</div>
+        </div>
+        <div class="template-card rounded-lg overflow-hidden border-2 border-transparent cursor-pointer" data-template="colorful-geometric">
+          <img src="https://p6-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/rc/pc/super_tool/645bbf2a860e4a198e9709a91a072b16~tplv-a9rns2rl98-image.image?lk3s=8e244e95&rcl=202604260947134ECB6A5DBE93EE38B459&rrcfp=f06b921b&x-expires=1779760089&x-signature=0pE1ZSmqnkT2%2BqTBrSBaGLdooNc%3D" alt="彩色几何" class="w-full h-24 object-cover">
+          <div class="p-2 text-center text-sm">彩色几何</div>
+        </div>
+        <div class="template-card rounded-lg overflow-hidden border-2 border-transparent cursor-pointer" data-template="code-editor">
+          <img src="https://p3-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/rc/pc/super_tool/ffba072b245748609a26030e4ebb6465~tplv-a9rns2rl98-image.image?lk3s=8e244e95&rcl=202604260947134ECB6A5DBE93EE38B459&rrcfp=f06b921b&x-expires=1779760081&x-signature=1KZ7vWbWmrxnesNj1frLSkQEDoI%3D" alt="代码编辑器" class="w-full h-24 object-cover">
+          <div class="p-2 text-center text-sm">代码编辑器</div>
+        </div>
+        <div class="template-card rounded-lg overflow-hidden border-2 border-transparent cursor-pointer" data-template="tech-circuit">
+          <img src="https://p3-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/rc/pc/super_tool/fe2a70c58219400aad876965974455da~tplv-a9rns2rl98-image.image?lk3s=8e244e95&rcl=202604260947134ECB6A5DBE93EE38B459&rrcfp=f06b921b&x-expires=1779760066&x-signature=d3xulC61KnJKDC5rky86x2IW%2FUY%3D" alt="科技电路" class="w-full h-24 object-cover">
+          <div class="p-2 text-center text-sm">科技电路</div>
+        </div>
+        <div class="template-card rounded-lg overflow-hidden border-2 border-transparent cursor-pointer" data-template="modern-orange-blue">
+          <img src="https://p3-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/rc/pc/super_tool/5f5c07d0c15a429ca7a9ba85ca461e90~tplv-a9rns2rl98-image.image?lk3s=8e244e95&rcl=202604260947134ECB6A5DBE93EE38B459&rrcfp=f06b921b&x-expires=1779760072&x-signature=m3Km7%2Fj49kCYGF%2B7fItKmFN6t0w%3D" alt="现代橙蓝" class="w-full h-24 object-cover">
+          <div class="p-2 text-center text-sm">现代橙蓝</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 编辑区和预览区 -->
+    <div class="flex flex-col lg:flex-row gap-8">
+      <!-- 左侧编辑区 -->
+      <section class="lg:w-2/3 animate-fadeIn" style="animation-delay: 0.2s;">
+        <div class="bg-gray-800 rounded-xl p-6 shadow-lg">
+          <h2 class="text-xl font-semibold mb-6 flex items-center">
+            <i class="fa fa-sliders mr-2 text-primary"></i>
+            自定义编辑
+          </h2>
+
+          <!-- 编辑选项卡 -->
+          <div class="mb-6 border-b border-gray-700">
+            <ul class="flex flex-wrap -mb-px" id="editTabs" role="tablist">
+              <li class="mr-2" role="presentation">
+                <button class="inline-block p-4 border-b-2 border-primary text-primary rounded-t-lg active" id="text-tab" data-tab="text" type="button" role="tab" aria-controls="text" aria-selected="true">
+                  <i class="fa fa-font mr-2"></i>文字
+                </button>
+              </li>
+              <li class="mr-2" role="presentation">
+                <button class="inline-block p-4 border-b-2 border-transparent hover:text-gray-300 hover:border-gray-300 rounded-t-lg" id="icon-tab" data-tab="icon" type="button" role="tab" aria-controls="icon" aria-selected="false">
+                  <i class="fa fa-picture-o mr-2"></i>图标
+                </button>
+              </li>
+              <li class="mr-2" role="presentation">
+                <button class="inline-block p-4 border-b-2 border-transparent hover:text-gray-300 hover:border-gray-300 rounded-t-lg" id="color-tab" data-tab="color" type="button" role="tab" aria-controls="color" aria-selected="false">
+                  <i class="fa fa-paint-brush mr-2"></i>颜色
+                </button>
+              </li>
+              <li role="presentation">
+                <button class="inline-block p-4 border-b-2 border-transparent hover:text-gray-300 hover:border-gray-300 rounded-t-lg" id="shape-tab" data-tab="shape" type="button" role="tab" aria-controls="shape" aria-selected="false">
+                  <i class="fa fa-object-group mr-2"></i>形状
+                </button>
+              </li>
+            </ul>
+          </div>
+
+          <!-- 文字编辑选项 -->
+          <div id="text-content" class="tab-content active">
+            <div class="mb-6">
+              <label for="textInput" class="block mb-2 text-sm font-medium">输入文字</label>
+              <input type="text" id="textInput" class="bg-gray-700 border border-gray-600 text-white rounded-lg block w-full p-3 focus:ring-primary focus:border-primary" placeholder="输入你的名字或昵称" value="Dev">
+            </div>
+            
+            <div class="mb-6">
+              <label for="fontFamily" class="block mb-2 text-sm font-medium">字体选择</label>
+              <select id="fontFamily" class="bg-gray-700 border border-gray-600 text-white rounded-lg block w-full p-3 focus:ring-primary focus:border-primary">
+                <option value="Arial, sans-serif">Arial</option>
+                <option value="'Helvetica Neue', sans-serif">Helvetica</option>
+                <option value="'Times New Roman', serif">Times New Roman</option>
+                <option value="Courier, monospace">Courier</option>
+                <option value="Georgia, serif">Georgia</option>
+                <option value="Verdana, sans-serif">Verdana</option>
+                <option value="'Comic Sans MS', cursive">Comic Sans</option>
+                <option value="'Impact', sans-serif">Impact</option>
+              </select>
+            </div>
+            
+            <div class="mb-6">
+              <label for="fontSize" class="block mb-2 text-sm font-medium">字体大小</label>
+              <div class="flex items-center">
+                <input type="range" id="fontSize" min="20" max="120" value="60" class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer">
+                <span id="fontSizeValue" class="ml-3 text-sm font-medium min-w-[40px] text-center">60px</span>
+              </div>
+            </div>
+            
+            <div class="mb-6">
+              <label for="textColor" class="block mb-2 text-sm font-medium">文字颜色</label>
+              <div class="flex flex-wrap gap-2">
+                <div class="color-option active" data-color="#ffffff" style="background-color: #ffffff;"></div>
+                <div class="color-option" data-color="#000000" style="background-color: #000000;"></div>
+                <div class="color-option" data-color="#ff0000" style="background-color: #ff0000;"></div>
+                <div class="color-option" data-color="#00ff00" style="background-color: #00ff00;"></div>
+                <div class="color-option" data-color="#0000ff" style="background-color: #0000ff;"></div>
+                <div class="color-option" data-color="#ffff00" style="background-color: #ffff00;"></div>
+                <div class="color-option" data-color="#ff00ff" style="background-color: #ff00ff;"></div>
+                <div class="color-option" data-color="#00ffff" style="background-color: #00ffff;"></div>
+                <div class="color-option" data-color="#ff9900" style="background-color: #ff9900;"></div>
+                <div class="color-option" data-color="#9900ff" style="background-color: #9900ff;"></div>
+                <input type="color" id="customTextColor" class="h-8 w-8 rounded cursor-pointer">
+              </div>
+            </div>
+            
+            <div class="mb-6">
+              <label for="textX" class="block mb-2 text-sm font-medium">文字X位置</label>
+              <div class="flex items-center">
+                <input type="range" id="textX" min="0" max="400" value="200" class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer">
+                <span id="textXValue" class="ml-3 text-sm font-medium min-w-[40px] text-center">200</span>
+              </div>
+            </div>
+            
+            <div class="mb-6">
+              <label for="textY" class="block mb-2 text-sm font-medium">文字Y位置</label>
+              <div class="flex items-center">
+                <input type="range" id="textY" min="0" max="400" value="220" class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer">
+                <span id="textYValue" class="ml-3 text-sm font-medium min-w-[40px] text-center">220</span>
+              </div>
+            </div>
+            
+            <div class="mb-6">
+              <label for="textRotation" class="block mb-2 text-sm font-medium">文字旋转</label>
+              <div class="flex items-center">
+                <input type="range" id="textRotation" min="-180" max="180" value="0" class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer">
+                <span id="textRotationValue" class="ml-3 text-sm font-medium min-w-[40px] text-center">0°</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- 图标编辑选项 -->
+          <div id="icon-content" class="tab-content hidden">
+            <div class="mb-6">
+              <label class="block mb-2 text-sm font-medium">选择图标</label>
+              <div class="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 gap-3">
+                <!-- 编程图标 -->
+                <div class="icon-option active flex flex-col items-center p-2 border-2 border-transparent rounded-lg cursor-pointer">
+                  <img src="https://p26-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/rc/pc/super_tool/f6a2296dd39247b8a96bf946bb71002a~tplv-a9rns2rl98-image.image?lk3s=8e244e95&rcl=202604260947134ECB6A5DBE93EE38B459&rrcfp=f06b921b&x-expires=1779760157&x-signature=jEQ6wHYQ%2FtcGKnGyQ%2F8NP15LztI%3D" alt="代码文件" class="w-12 h-12 object-contain mb-1">
+                  <span class="text-xs">代码</span>
+                </div>
+                <div class="icon-option flex flex-col items-center p-2 border-2 border-transparent rounded-lg cursor-pointer">
+                  <img src="https://p26-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/rc/pc/super_tool/f6a2296dd39247b8a96bf946bb71002a~tplv-a9rns2rl98-image.image?lk3s=8e244e95&rcl=202604260947134ECB6A5DBE93EE38B459&rrcfp=f06b921b&x-expires=1779760157&x-signature=jEQ6wHYQ%2FtcGKnGyQ%2F8NP15LztI%3D" alt="终端" class="w-12 h-12 object-contain mb-1" style="object-position: center 30%;">
+                  <span class="text-xs">终端</span>
+                </div>
+                <div class="icon-option flex flex-col items-center p-2 border-2 border-transparent rounded-lg cursor-pointer">
+                  <img src="https://p26-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/rc/pc/super_tool/f6a2296dd39247b8a96bf946bb71002a~tplv-a9rns2rl98-image.image?lk3s=8e244e95&rcl=202604260947134ECB6A5DBE93EE38B459&rrcfp=f06b921b&x-expires=1779760157&x-signature=jEQ6wHYQ%2FtcGKnGyQ%2F8NP15LztI%3D" alt="数据库" class="w-12 h-12 object-contain mb-1" style="object-position: center 60%;">
+                  <span class="text-xs">数据库</span>
+                </div>
+                <div class="icon-option flex flex-col items-center p-2 border-2 border-transparent rounded-lg cursor-pointer">
+                  <img src="https://p26-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/rc/pc/super_tool/f6a2296dd39247b8a96bf946bb71002a~tplv-a9rns2rl98-image.image?lk3s=8e244e95&rcl=202604260947134ECB6A5DBE93EE38B459&rrcfp=f06b921b&x-expires=1779760157&x-signature=jEQ6wHYQ%2FtcGKnGyQ%2F8NP15LztI%3D" alt="服务器" class="w-12 h-12 object-contain mb-1" style="object-position: center 90%;">
+                  <span class="text-xs">服务器</span>
+                </div>
+                
+                <!-- 科技图标 -->
+                <div class="icon-option flex flex-col items-center p-2 border-2 border-transparent rounded-lg cursor-pointer">
+                  <img src="https://p6-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/rc/pc/super_tool/0b5abc0896cd4c3392beda8293958c01~tplv-a9rns2rl98-image.image?lk3s=8e244e95&rcl=202604260947134ECB6A5DBE93EE38B459&rrcfp=f06b921b&x-expires=1779760125&x-signature=LBwR8Fjohzk6jsca4ZgpO%2FD5GDQ%3D" alt="AI" class="w-12 h-12 object-contain mb-1" style="object-position: center 25%;">
+                  <span class="text-xs">AI</span>
+                </div>
+                <div class="icon-option flex flex-col items-center p-2 border-2 border-transparent rounded-lg cursor-pointer">
+                  <img src="https://p6-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/rc/pc/super_tool/0b5abc0896cd4c3392beda8293958c01~tplv-a9rns2rl98-image.image?lk3s=8e244e95&rcl=202604260947134ECB6A5DBE93EE38B459&rrcfp=f06b921b&x-expires=1779760125&x-signature=LBwR8Fjohzk6jsca4ZgpO%2FD5GDQ%3D" alt="区块链" class="w-12 h-12 object-contain mb-1" style="object-position: center 50%;">
+                  <span class="text-xs">区块链</span>
+                </div>
+                <div class="icon-option flex flex-col items-center p-2 border-2 border-transparent rounded-lg cursor-pointer">
+                  <img src="https://p6-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/rc/pc/super_tool/0b5abc0896cd4c3392beda8293958c01~tplv-a9rns2rl98-image.image?lk3s=8e244e95&rcl=202604260947134ECB6A5DBE93EE38B459&rrcfp=f06b921b&x-expires=1779760125&x-signature=LBwR8Fjohzk6jsca4ZgpO%2FD5GDQ%3D" alt="云计算" class="w-12 h-12 object-contain mb-1" style="object-position: center 75%;">
+                  <span class="text-xs">云计算</span>
+                </div>
+                <div class="icon-option flex flex-col items-center p-2 border-2 border-transparent rounded-lg cursor-pointer">
+                  <img src="https://p6-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/rc/pc/super_tool/0b5abc0896cd4c3392beda8293958c01~tplv-a9rns2rl98-image.image?lk3s=8e244e95&rcl=202604260947134ECB6A5DBE93EE38B459&rrcfp=f06b921b&x-expires=1779760125&x-signature=LBwR8Fjohzk6jsca4ZgpO%2FD5GDQ%3D" alt="网络" class="w-12 h-12 object-contain mb-1" style="object-position: center 100%;">
+                  <span class="text-xs">网络</span>
+                </div>
+                
+                <!-- 设计图标 -->
+                <div class="icon-option flex flex-col items-center p-2 border-2 border-transparent rounded-lg cursor-pointer">
+                  <img src="https://p3-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/rc/pc/super_tool/249ea3995dc242eaa1a34ad035b109ad~tplv-a9rns2rl98-image.image?lk3s=8e244e95&rcl=202604260947134ECB6A5DBE93EE38B459&rrcfp=f06b921b&x-expires=1779760127&x-signature=GWKbMsTljZGAAROj0rGk4C%2BH3Hc%3D" alt="画笔" class="w-12 h-12 object-contain mb-1" style="object-position: center 25%;">
+                  <span class="text-xs">画笔</span>
+                </div>
+                <div class="icon-option flex flex-col items-center p-2 border-2 border-transparent rounded-lg cursor-pointer">
+                  <img src="https://p3-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/rc/pc/super_tool/249ea3995dc242eaa1a34ad035b109ad~tplv-a9rns2rl98-image.image?lk3s=8e244e95&rcl=202604260947134ECB6A5DBE93EE38B459&rrcfp=f06b921b&x-expires=1779760127&x-signature=GWKbMsTljZGAAROj0rGk4C%2BH3Hc%3D" alt="调色板" class="w-12 h-12 object-contain mb-1" style="object-position: center 50%;">
+                  <span class="text-xs">调色板</span>
+                </div>
+                <div class="icon-option flex flex-col items-center p-2 border-2 border-transparent rounded-lg cursor-pointer">
+                  <img src="https://p3-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/rc/pc/super_tool/249ea3995dc242eaa1a34ad035b109ad~tplv-a9rns2rl98-image.image?lk3s=8e244e95&rcl=202604260947134ECB6A5DBE93EE38B459&rrcfp=f06b921b&x-expires=1779760127&x-signature=GWKbMsTljZGAAROj0rGk4C%2BH3Hc%3D" alt="图层" class="w-12 h-12 object-contain mb-1" style="object-position: center 75%;">
+                  <span class="text-xs">图层</span>
+                </div>
+                <div class="icon-option flex flex-col items-center p-2 border-2 border-transparent rounded-lg cursor-pointer">
+                  <img src="https://p3-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/rc/pc/super_tool/249ea3995dc242eaa1a34ad035b109ad~tplv-a9rns2rl98-image.image?lk3s=8e244e95&rcl=202604260947134ECB6A5DBE93EE38B459&rrcfp=f06b921b&x-expires=1779760127&x-signature=GWKbMsTljZGAAROj0rGk4C%2BH3Hc%3D" alt="原型" class="w-12 h-12 object-contain mb-1" style="object-position: center 100%;">
+                  <span class="text-xs">原型</span>
+                </div>
+              </div>
+            </div>
+            
+            <div class="mb-6">
+              <label for="iconSize" class="block mb-2 text-sm font-medium">图标大小</label>
+              <div class="flex items-center">
+                <input type="range" id="iconSize" min="20" max="200" value="100" class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer">
+                <span id="iconSizeValue" class="ml-3 text-sm font-medium min-w-[40px] text-center">100px</span>
+              </div>
+            </div>
+            
+            <div class="mb-6">
+              <label for="iconX" class="block mb-2 text-sm font-medium">图标X位置</label>
+              <div class="flex items-center">
+                <input type="range" id="iconX" min="0" max="400" value="200" class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer">
+                <span id="iconXValue" class="ml-3 text-sm font-medium min-w-[40px] text-center">200</span>
+              </div>
+            </div>
+            
+            <div class="mb-6">
+              <label for="iconY" class="block mb-2 text-sm font-medium">图标Y位置</label>
+              <div class="flex items-center">
+                <input type="range" id="iconY" min="0" max="400" value="200" class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer">
+                <span id="iconYValue" class="ml-3 text-sm font-medium min-w-[40px] text-center">200</span>
+              </div>
+            </div>
+            
+            <div class="mb-6">
+              <label for="iconRotation" class="block mb-2 text-sm font-medium">图标旋转</label>
+              <div class="flex items-center">
+                <input type="range" id="iconRotation" min="-180" max="180" value="0" class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer">
+                <span id="iconRotationValue" class="ml-3 text-sm font-medium min-w-[40px] text-center">0°</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- 颜色编辑选项 -->
+          <div id="color-content" class="tab-content hidden">
+            <div class="mb-6">
+              <label class="block mb-2 text-sm font-medium">背景颜色</label>
+              <div class="flex flex-wrap gap-2">
+                <div class="color-option active" data-color="#1e293b" style="background-color: #1e293b;"></div>
+                <div class="color-option" data-color="#0f172a" style="background-color: #0f172a;"></div>
+                <div class="color-option" data-color="#1e3a8a" style="background-color: #1e3a8a;"></div>
+                <div class="color-option" data-color="#134e4a" style="background-color: #134e4a;"></div>
+                <div class="color-option" data-color="#4c1d95" style="background-color: #4c1d95;"></div>
+                <div class="color-option" data-color="#7c2d12" style="background-color: #7c2d12;"></div>
+                <div class="color-option" data-color="#000000" style="background-color: #000000;"></div>
+                <div class="color-option" data-color="#ffffff" style="background-color: #ffffff;"></div>
+                <input type="color" id="customBgColor" class="h-8 w-8 rounded cursor-pointer">
+              </div>
+            </div>
+            
+            <div class="mb-6">
+              <label for="gradientToggle" class="flex items-center cursor-pointer">
+                <div class="relative">
+                  <input type="checkbox" id="gradientToggle" class="sr-only">
+                  <div class="block bg-gray-600 w-14 h-8 rounded-full"></div>
+                  <div class="dot absolute left-1 top-1 bg-white w-6 h-6 rounded-full transition"></div>
+                </div>
+                <div class="ml-3 text-sm font-medium">启用渐变背景</div>
+              </label>
+            </div>
+            
+            <div id="gradientOptions" class="mb-6 hidden">
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label class="block mb-2 text-sm font-medium">渐变颜色1</label>
+                  <div class="flex items-center">
+                    <input type="color" id="gradientColor1" class="h-8 w-8 rounded cursor-pointer mr-2" value="#3b82f6">
+                    <input type="text" id="gradientColor1Text" class="bg-gray-700 border border-gray-600 text-white rounded-lg block w-full p-2" value="#3b82f6">
+                  </div>
+                </div>
+                <div>
+                  <label class="block mb-2 text-sm font-medium">渐变颜色2</label>
+                  <div class="flex items-center">
+                    <input type="color" id="gradientColor2" class="h-8 w-8 rounded cursor-pointer mr-2" value="#6366f1">
+                    <input type="text" id="gradientColor2Text" class="bg-gray-700 border border-gray-600 text-white rounded-lg block w-full p-2" value="#6366f1">
+                  </div>
+                </div>
+              </div>
+              
+              <div class="mt-4">
+                <label class="block mb-2 text-sm font-medium">渐变方向</label>
+                <select id="gradientDirection" class="bg-gray-700 border border-gray-600 text-white rounded-lg block w-full p-3 focus:ring-primary focus:border-primary">
+                  <option value="to right">从左到右</option>
+                  <option value="to bottom">从上到下</option>
+                  <option value="to bottom right">从左上到右下</option>
+                  <option value="to bottom left">从右上到左下</option>
+                  <option value="radial">径向渐变</option>
+                </select>
+              </div>
+            </div>
+            
+            <div class="mb-6">
+              <label for="bgPattern" class="block mb-2 text-sm font-medium">背景图案</label>
+              <select id="bgPattern" class="bg-gray-700 border border-gray-600 text-white rounded-lg block w-full p-3 focus:ring-primary focus:border-primary">
+                <option value="none">无图案</option>
+                <option value="dots">点状图案</option>
+                <option value="grid">网格图案</option>
+                <option value="lines">线条图案</option>
+                <option value="circles">圆圈图案</option>
+                <option value="hexagons">六边形图案</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- 形状编辑选项 -->
+          <div id="shape-content" class="tab-content hidden">
+            <div class="mb-6">
+              <label class="block mb-2 text-sm font-medium">头像形状</label>
+              <div class="flex flex-wrap gap-4">
+                <div class="shape-option active flex flex-col items-center p-3 border-2 border-transparent rounded-lg cursor-pointer">
+                  <div class="w-16 h-16 rounded-full bg-gray-700 flex items-center justify-center mb-2">
+                    <i class="fa fa-circle-o text-3xl"></i>
+                  </div>
+                  <span class="text-sm">圆形</span>
+                </div>
+                <div class="shape-option flex flex-col items-center p-3 border-2 border-transparent rounded-lg cursor-pointer">
+                  <div class="w-16 h-16 rounded-lg bg-gray-700 flex items-center justify-center mb-2">
+                    <i class="fa fa-square-o text-3xl"></i>
+                  </div>
+                  <span class="text-sm">方形</span>
+                </div>
+                <div class="shape-option flex flex-col items-center p-3 border-2 border-transparent rounded-lg cursor-pointer">
+                  <div class="w-16 h-16 rounded-2xl bg-gray-700 flex items-center justify-center mb-2">
+                    <i class="fa fa-square-o text-3xl"></i>
+                  </div>
+                  <span class="text-sm">圆角方形</span>
+                </div>
+                <div class="shape-option flex flex-col items-center p-3 border-2 border-transparent rounded-lg cursor-pointer">
+                  <div class="w-16 h-16 transform rotate-45 bg-gray-700 flex items-center justify-center mb-2">
+                    <i class="fa fa-square-o text-3xl transform -rotate-45"></i>
+                  </div>
+                  <span class="text-sm">菱形</span>
+                </div>
+              </div>
+            </div>
+            
+            <div class="mb-6">
+              <label for="borderWidth" class="block mb-2 text-sm font-medium">边框宽度</label>
+              <div class="flex items-center">
+                <input type="range" id="borderWidth" min="0" max="20" value="0" class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer">
+                <span id="borderWidthValue" class="ml-3 text-sm font-medium min-w-[40px] text-center">0px</span>
+              </div>
+            </div>
+            
+            <div class="mb-6">
+              <label for="borderColor" class="block mb-2 text-sm font-medium">边框颜色</label>
+              <div class="flex items-center">
+                <input type="color" id="borderColor" class="h-8 w-8 rounded cursor-pointer mr-2" value="#ffffff">
+                <input type="text" id="borderColorText" class="bg-gray-700 border border-gray-600 text-white rounded-lg block w-full p-2" value="#ffffff">
+              </div>
+            </div>
+            
+            <div class="mb-6">
+              <label for="shadowToggle" class="flex items-center cursor-pointer">
+                <div class="relative">
+                  <input type="checkbox" id="shadowToggle" class="sr-only">
+                  <div class="block bg-gray-600 w-14 h-8 rounded-full"></div>
+                  <div class="dot absolute left-1 top-1 bg-white w-6 h-6 rounded-full transition"></div>
+                </div>
+                <div class="ml-3 text-sm font-medium">启用阴影效果</div>
+              </label>
+            </div>
+            
+            <div id="shadowOptions" class="mb-6 hidden">
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label for="shadowBlur" class="block mb-2 text-sm font-medium">阴影模糊度</label>
+                  <div class="flex items-center">
+                    <input type="range" id="shadowBlur" min="0" max="50" value="10" class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer">
+                    <span id="shadowBlurValue" class="ml-3 text-sm font-medium min-w-[40px] text-center">10px</span>
+                  </div>
+                </div>
+                <div>
+                  <label for="shadowSpread" class="block mb-2 text-sm font-medium">阴影扩散</label>
+                  <div class="flex items-center">
+                    <input type="range" id="shadowSpread" min="-20" max="20" value="0" class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer">
+                    <span id="shadowSpreadValue" class="ml-3 text-sm font-medium min-w-[40px] text-center">0px</span>
+                  </div>
+                </div>
+              </div>
+              
+              <div class="mt-4">
+                <label for="shadowColor" class="block mb-2 text-sm font-medium">阴影颜色</label>
+                <div class="flex items-center">
+                  <input type="color" id="shadowColor" class="h-8 w-8 rounded cursor-pointer mr-2" value="#000000">
+                  <input type="text" id="shadowColorText" class="bg-gray-700 border border-gray-600 text-white rounded-lg block w-full p-2" value="#000000">
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 右侧预览区 -->
+      <section class="lg:w-1/3 animate-fadeIn" style="animation-delay: 0.3s;">
+        <div class="bg-gray-800 rounded-xl p-6 shadow-lg sticky top-24">
+          <h2 class="text-xl font-semibold mb-6 flex items-center">
+            <i class="fa fa-eye mr-2 text-primary"></i>
+            实时预览
+          </h2>
+          
+          <!-- 预览容器 -->
+          <div class="flex justify-center mb-6">
+            <div id="previewContainer" class="relative w-64 h-64 border-2 border-gray-600 rounded-full overflow-hidden flex items-center justify-center bg-gray-900">
+              <canvas id="avatarCanvas" width="400" height="400" class="w-full h-full"></canvas>
+            </div>
+          </div>
+          
+          <!-- AI推荐区域 -->
+          <div class="mb-6 p-4 bg-gray-700 bg-opacity-50 rounded-lg">
+            <h3 class="text-lg font-medium mb-3 flex items-center">
+              <i class="fa fa-lightbulb-o text-yellow-400 mr-2"></i>
+              AI智能推荐
+            </h3>
+            <p class="text-sm text-gray-300 mb-3">输入关键词，AI将为您推荐匹配的头像设计方案</p>
+            <div class="flex">
+              <input type="text" id="aiInput" class="bg-gray-700 border border-gray-600 text-white rounded-l-lg block w-full p-2 focus:ring-primary focus:border-primary" placeholder="例如：程序员、设计师、前端开发">
+              <button id="aiRecommendBtn" class="bg-primary hover:bg-blue-600 text-white font-medium py-2 px-4 rounded-r-lg transition-all-300">
+                <i class="fa fa-magic mr-1"></i>
+                推荐
+              </button>
+            </div>
+          </div>
+          
+          <!-- 操作按钮 -->
+          <div class="flex flex-col space-y-3">
+            <button id="resetBtn" class="w-full px-4 py-3 rounded-lg bg-gray-700 hover:bg-gray-600 transition-all-300 flex items-center justify-center">
+              <i class="fa fa-refresh mr-2"></i>
+              重置设计
+            </button>
+            <button id="downloadBtn" class="w-full px-4 py-3 rounded-lg bg-primary hover:bg-blue-600 transition-all-300 flex items-center justify-center">
+              <i class="fa fa-download mr-2"></i>
+              下载头像
+            </button>
+            <div class="text-xs text-center text-gray-400 mt-2">
+              支持导出为PNG格式，符合GitHub头像规格 (400×400px)
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <!-- 帮助模态框 -->
+  <div id="helpModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center hidden">
+    <div class="bg-gray-800 rounded-xl p-6 max-w-2xl w-full mx-4 max-h-[80vh] overflow-y-auto">
+      <div class="flex justify-between items-center mb-4">
+        <h2 class="text-xl font-bold">使用帮助</h2>
+        <button id="closeHelpBtn" class="text-gray-400 hover:text-white">
+          <i class="fa fa-times text-xl"></i>
+        </button>
+      </div>
+      <div class="space-y-4">
+        <div>
+          <h3 class="text-lg font-medium text-primary mb-2">基本操作</h3>
+          <ul class="list-disc pl-5 space-y-1 text-gray-300">
+            <li>从顶部选择一个喜欢的头像模板</li>
+            <li>使用左侧编辑面板自定义文字、图标、颜色和形状</li>
+            <li>在右侧实时预览效果</li>
+            <li>点击"下载头像"按钮保存您的设计</li>
+          </ul>
+        </div>
+        <div>
+          <h3 class="text-lg font-medium text-primary mb-2">功能说明</h3>
+          <ul class="list-disc pl-5 space-y-1 text-gray-300">
+            <li><strong>文字编辑</strong>：添加个性化文字，调整字体、大小、颜色和位置</li>
+            <li><strong>图标添加</strong>：从多种图标中选择，调整大小、位置和旋转角度</li>
+            <li><strong>颜色自定义</strong>：更改背景颜色，应用渐变效果和图案</li>
+            <li><strong>形状调整</strong>：选择不同的头像形状，添加边框和阴影效果</li>
+            <li><strong>AI推荐</strong>：输入关键词获取AI智能推荐的设计方案</li>
+          </ul>
+        </div>
+        <div>
+          <h3 class="text-lg font-medium text-primary mb-2">导出说明</h3>
+          <ul class="list-disc pl-5 space-y-1 text-gray-300">
+            <li>导出的头像尺寸为400×400像素，符合GitHub要求</li>
+            <li>支持透明背景（PNG格式）</li>
+            <li>建议使用正方形或圆形设计，以适应GitHub的头像显示</li>
+          </ul>
+        </div>
+      </div>
+      <div class="mt-6 pt-4 border-t border-gray-700">
+        <button id="closeHelpBtnBottom" class="w-full px-4 py-2 rounded-lg bg-primary hover:bg-blue-600 transition-all-300">
+          我知道了
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== 新增：GitHub 项目弹窗 ========== -->
+  <div id="githubProjectModal" class="fixed inset-0 bg-black bg-opacity-60 z-50 flex items-center justify-center hidden">
+    <div class="bg-gray-800 rounded-xl p-6 max-w-2xl w-full mx-4 shadow-2xl">
+      <div class="flex justify-between items-center mb-5">
+        <h2 class="text-xl font-bold flex items-center">
+          <i class="fa fa-github mr-2 text-white"></i>GitHub 项目
+        </h2>
+        <button id="closeGithubModal" class="text-gray-400 hover:text-white transition-colors">
+          <i class="fa fa-times text-xl"></i>
+        </button>
+      </div>
+
+      <!-- 项目卡片 -->
+      <div class="bg-gray-700 rounded-lg p-5 mb-4">
+        <div class="flex items-start gap-4">
+          <div class="w-16 h-16 bg-gray-900 rounded-lg flex items-center justify-center text-3xl">
+            <i class="fa fa-github"></i>
+          </div>
+          <div class="flex-1">
+            <h3 class="text-lg font-bold mb-1">github-avatar-generator</h3>
+            <p class="text-gray-300 text-sm mb-3">一款美观、易用、零依赖的 GitHub 头像在线生成工具</p>
+            <div class="flex flex-wrap gap-2 text-xs">
+              <span class="px-2 py-1 bg-blue-600 rounded-full">JavaScript</span>
+              <span class="px-2 py-1 bg-gray-600 rounded-full">开源工具</span>
+              <span class="px-2 py-1 bg-purple-600 rounded-full">在线工具</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="flex flex-col sm:flex-row gap-3">
+        <a href="https://github.com/XXXX/github-avatar-generator" target="_blank" 
+           class="flex-1 bg-gray-900 hover:bg-black text-white font-medium py-3 px-4 rounded-lg text-center flex items-center justify-center transition-all">
+          <i class="fa fa-external-link mr-2"></i>访问 GitHub 项目
+        </a>
+        <button id="useProjectBtn" 
+           class="flex-1 bg-primary hover:bg-blue-600 text-white font-medium py-3 px-4 rounded-lg text-center flex items-center justify-center transition-all">
+          <i class="fa fa-check mr-2"></i>使用该项目
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 通知提示 -->
+  <div id="notification" class="fixed bottom-4 right-4 bg-green-500 text-white px-4 py-2 rounded-lg shadow-lg transform translate-y-20 opacity-0 transition-all duration-300 z-50 flex items-center">
+    <i class="fa fa-check-circle mr-2"></i>
+    <span id="notificationText">操作成功</span>
+  </div>
+
+  <script>
+    // 全局变量
+    let currentTemplate = 'tech-blue';
+    let avatarSettings = {
+      text: 'Dev',
+      fontSize: 60,
+      fontFamily: 'Arial, sans-serif',
+      textColor: '#ffffff',
+      textX: 200,
+      textY: 220,
+      textRotation: 0,
+      icon: 'code',
+      iconSize: 100,
+      iconX: 200,
+      iconY: 200,
+      iconRotation: 0,
+      bgColor: '#1e293b',
+      gradient: false,
+      gradientColor1: '#3b82f6',
+      gradientColor2: '#6366f1',
+      gradientDirection: 'to right',
+      bgPattern: 'none',
+      shape: 'circle',
+      borderWidth: 0,
+      borderColor: '#ffffff',
+      shadow: false,
+      shadowBlur: 10,
+      shadowSpread: 0,
+      shadowColor: '#000000'
+    };
+
+    // 模板数据
+    const templates = {
+      'tech-blue': {
+        bgColor: '#0f172a',
+        gradient: true,
+        gradientColor1: '#3b82f6',
+        gradientColor2: '#1e40af',
+        gradientDirection: 'radial',
+        text: 'Dev',
+        textColor: '#ffffff',
+        shape: 'circle'
+      },
+      'minimal-black': {
+        bgColor: '#374151',
+        gradient: false,
+        text: 'M',
+        fontSize: 120,
+        textColor: '#ffffff',
+        shape: 'circle'
+      },
+      'colorful-geometric': {
+        bgColor: '#ffffff',
+        gradient: false,
+        shape: 'square',
+        borderWidth: 2,
+        borderColor: '#000000'
+      },
+      'code-editor': {
+        bgColor: '#1e293b',
+        gradient: false,
+        text: 'Hello',
+        fontSize: 40,
+        fontFamily: 'Courier, monospace',
+        textColor: '#10b981',
+        shape: 'circle'
+      },
+      'tech-circuit': {
+        bgColor: '#4c1d95',
+        gradient: true,
+        gradientColor1: '#4c1d95',
+        gradientColor2: '#0f172a',
+        gradientDirection: 'radial',
+        text: 'AI',
+        textColor: '#ffffff',
+        shape: 'circle'
+      },
+      'modern-orange-blue': {
+        bgColor: '#f97316',
+        gradient: true,
+        gradientColor1: '#f97316',
+        gradientColor2: '#3b82f6',
+        gradientDirection: 'to right',
+        shape: 'circle'
+      }
+    };
+
+    // AI推荐关键词映射
+    const aiRecommendations = {
+      '程序员': {
+        template: 'code-editor',
+        text: 'Code',
+        textColor: '#10b981',
+        fontFamily: 'Courier, monospace'
+      },
+      '设计师': {
+        template: 'colorful-geometric',
+        text: 'Design',
+        textColor: '#000000',
+        icon: 'palette'
+      },
+      '前端开发': {
+        template: 'tech-blue',
+        text: 'Frontend',
+        textColor: '#ffffff',
+        icon: 'code'
+      },
+      '后端开发': {
+        template: 'tech-circuit',
+        text: 'Backend',
+        textColor: '#ffffff',
+        icon: 'database'
+      },
+      '数据科学家': {
+        template: 'modern-orange-blue',
+        text: 'Data',
+        textColor: '#ffffff',
+        icon: 'chart'
+      },
+      '产品经理': {
+        template: 'minimal-black',
+        text: 'PM',
+        textColor: '#ffffff',
+        shape: 'square'
+      }
+    };
+
+    // DOM元素
+    const canvas = document.getElementById('avatarCanvas');
+    const ctx = canvas.getContext('2d');
+    const previewContainer = document.getElementById('previewContainer');
+
+    // 初始化
+    document.addEventListener('DOMContentLoaded', function() {
+      // 初始化滑块样式
+      initSliders();
+      
+      // 初始化事件监听
+      initEventListeners();
+      
+      // 初始化模板
+      loadTemplate(currentTemplate);
+      
+      // 绘制头像
+      drawAvatar();
+    });
+
+    // 初始化滑块
+    function initSliders() {
+      const sliders = [
+        { id: 'fontSize', suffix: 'px' },
+        { id: 'textX', suffix: '' },
+        { id: 'textY', suffix: '' },
+        { id: 'textRotation', suffix: '°' },
+        { id: 'iconSize', suffix: 'px' },
+        { id: 'iconX', suffix: '' },
+        { id: 'iconY', suffix: '' },
+        { id: 'iconRotation', suffix: '°' },
+        { id: 'borderWidth', suffix: 'px' },
+        { id: 'shadowBlur', suffix: 'px' },
+        { id: 'shadowSpread', suffix: 'px' }
+      ];
+
+      sliders.forEach(slider => {
+        const sliderElement = document.getElementById(slider.id);
+        const valueElement = document.getElementById(slider.id + 'Value');
+        
+        if (sliderElement && valueElement) {
+          // 设置滑块背景
+          sliderElement.style.backgroundSize = (sliderElement.value - sliderElement.min) / (sliderElement.max - sliderElement.min) * 100 + '% 100%';
+          
+          // 更新显示值
+          valueElement.textContent = sliderElement.value + slider.suffix;
+          
+          // 监听滑块变化
+          sliderElement.addEventListener('input', function() {
+            // 更新滑块背景
+            this.style.backgroundSize = (this.value - this.min) / (this.max - this.min) * 100 + '% 100%';
+            
+            // 更新显示值
+            valueElement.textContent = this.value + slider.suffix;
+            
+            // 更新设置
+            avatarSettings[slider.id] = parseInt(this.value);
+            
+            // 重绘头像
+            drawAvatar();
+          });
+        }
+      });
+    }
+
+    // 初始化事件监听
+    function initEventListeners() {
+      // ========== 新增：GitHub 项目按钮事件 ==========
+      document.getElementById('githubProjectBtn').addEventListener('click', function() {
+        document.getElementById('githubProjectModal').classList.remove('hidden');
+      });
+      
+      document.getElementById('closeGithubModal').addEventListener('click', function() {
+        document.getElementById('githubProjectModal').classList.add('hidden');
+      });
+      
+      document.getElementById('useProjectBtn').addEventListener('click', function() {
+        document.getElementById('githubProjectModal').classList.add('hidden');
+        showNotification('已成功调用 GitHub 项目！');
+      });
+
+      // 模板选择
+      document.querySelectorAll('.template-card').forEach(card => {
+        card.addEventListener('click', function() {
+          // 移除所有模板的active类
+          document.querySelectorAll('.template-card').forEach(c => c.classList.remove('active'));
+          
+          // 添加当前模板的active类
+          this.classList.add('active');
+          
+          // 获取模板ID
+          const templateId = this.dataset.template;
+          
+          // 加载模板
+          loadTemplate(templateId);
+        });
+      });
+
+      // 选项卡切换
+      document.querySelectorAll('#editTabs button').forEach(tab => {
+        tab.addEventListener('click', function() {
+          // 移除所有选项卡的active类
+          document.querySelectorAll('#editTabs button').forEach(t => {
+            t.classList.remove('active');
+            t.classList.remove('border-primary');
+            t.classList.remove('text-primary');
+            t.classList.add('border-transparent');
+          });
+          
+          // 添加当前选项卡的active类
+          this.classList.add('active');
+          this.classList.add('border-primary');
+          this.classList.add('text-primary');
+          this.classList.remove('border-transparent');
+          
+          // 隐藏所有内容
+          document.querySelectorAll('.tab-content').forEach(content => {
+            content.classList.add('hidden');
+          });
+          
+          // 显示当前内容
+          const tabId = this.dataset.tab;
+          document.getElementById(tabId + '-content').classList.remove('hidden');
+        });
+      });
+
+      // 文字输入
+      document.getElementById('textInput').addEventListener('input', function() {
+        avatarSettings.text = this.value;
+        drawAvatar();
+      });
+
+      // 字体选择
+      document.getElementById('fontFamily').addEventListener('change', function() {
+        avatarSettings.fontFamily = this.value;
+        drawAvatar();
+      });
+
+      // 文字颜色选择
+      document.querySelectorAll('#text-content .color-option').forEach(option => {
+        option.addEventListener('click', function() {
+          // 移除所有颜色选项的active类
+          document.querySelectorAll('#text-content .color-option').forEach(o => o.classList.remove('active'));
+          
+          // 添加当前颜色选项的active类
+          this.classList.add('active');
+          
+          // 更新文字颜色
+          avatarSettings.textColor = this.dataset.color;
+          drawAvatar();
+        });
+      });
+
+      // 自定义文字颜色
+      document.getElementById('customTextColor').addEventListener('input', function() {
+        // 移除所有颜色选项的active类
+        document.querySelectorAll('#text-content .color-option').forEach(o => o.classList.remove('active'));
+        
+        // 更新文字颜色
+        avatarSettings.textColor = this.value;
+        drawAvatar();
+      });
+
+      // 图标选择
+      document.querySelectorAll('#icon-content .icon-option').forEach(option => {
+        option.addEventListener('click', function() {
+          // 移除所有图标选项的active类
+          document.querySelectorAll('#icon-content .icon-option').forEach(o => o.classList.remove('active'));
+          
+          // 添加当前图标选项的active类
+          this.classList.add('active');
+          
+          // 更新图标
+          // 这里简化处理，实际应用中可能需要更复杂的图标映射
+          drawAvatar();
+        });
+      });
+
+      // 背景颜色选择
+      document.querySelectorAll('#color-content .color-option').forEach(option => {
+        option.addEventListener('click', function() {
+          // 移除所有颜色选项的active类
+          document.querySelectorAll('#color-content .color-option').forEach(o => o.classList.remove('active'));
+          
+          // 添加当前颜色选项的active类
+          this.classList.add('active');
+          
+          // 更新背景颜色
+          avatarSettings.bgColor = this.dataset.color;
+          avatarSettings.gradient = false;
+          
+          // 更新渐变开关
+          document.getElementById('gradientToggle').checked = false;
+          document.getElementById('gradientOptions').classList.add('hidden');
+          
+          // 更新自定义颜色输入
+          document.getElementById('customBgColor').value = this.dataset.color;
+          
+          drawAvatar();
+        });
+      });
+
+      // 自定义背景颜色
+      document.getElementById('customBgColor').addEventListener('input', function() {
+        // 移除所有颜色选项的active类
+        document.querySelectorAll('#color-content .color-option').forEach(o => o.classList.remove('active'));
+        
+        // 更新背景颜色
+        avatarSettings.bgColor = this.value;
+        avatarSettings.gradient = false;
+        
+        // 更新渐变开关
+        document.getElementById('gradientToggle').checked = false;
+        document.getElementById('gradientOptions').classList.add('hidden');
+        
+        drawAvatar();
+      });
+
+      // 渐变开关
+      document.getElementById('gradientToggle').addEventListener('change', function() {
+        if (this.checked) {
+          // 启用渐变
+          avatarSettings.gradient = true;
+          document.getElementById('gradientOptions').classList.remove('hidden');
+          
+          // 移除所有颜色选项的active类
+          document.querySelectorAll('#color-content .color-option').forEach(o => o.classList.remove('active'));
+        } else {
+          // 禁用渐变
+          avatarSettings.gradient = false;
+          document.getElementById('gradientOptions').classList.add('hidden');
+        }
+        drawAvatar();
+      });
+
+      // 渐变颜色1
+      document.getElementById('gradientColor1').addEventListener('input', function() {
+        avatarSettings.gradientColor1 = this.value;
+        document.getElementById('gradientColor1Text').value = this.value;
+        drawAvatar();
+      });
+
+      document.getElementById('gradientColor1Text').addEventListener('input', function() {
+        if (isValidHexColor(this.value)) {
+          avatarSettings.gradientColor1 = this.value;
+          document.getElementById('gradientColor1').value = this.value;
+          drawAvatar();
+        }
+      });
+
+      // 渐变颜色2
+      document.getElementById('gradientColor2').addEventListener('input', function() {
+        avatarSettings.gradientColor2 = this.value;
+        document.getElementById('gradientColor2Text').value = this.value;
+        drawAvatar();
+      });
+
+      document.getElementById('gradientColor2Text').addEventListener('input', function() {
+        if (isValidHexColor(this.value)) {
+          avatarSettings.gradientColor2 = this.value;
+          document.getElementById('gradientColor2').value = this.value;
+          drawAvatar();
+        }
+      });
+
+      // 渐变方向
+      document.getElementById('gradientDirection').addEventListener('change', function() {
+        avatarSettings.gradientDirection = this.value;
+        drawAvatar();
+      });
+
+      // 背景图案
+      document.getElementById('bgPattern').addEventListener('change', function() {
+        avatarSettings.bgPattern = this.value;
+        drawAvatar();
+      });
+
+      // 形状选择
+      document.querySelectorAll('#shape-content .shape-option').forEach(option => {
+        option.addEventListener('click', function() {
+          // 移除所有形状选项的active类
+          document.querySelectorAll('#shape-content .shape-option').forEach(o => o.classList.remove('active'));
+          
+          // 添加当前形状选项的active类
+          this.classList.add('active');
+          
+          // 更新形状
+          const shapeIndex = Array.from(document.querySelectorAll('#shape-content .shape-option')).indexOf(this);
+          const shapes = ['circle', 'square', 'rounded-square', 'diamond'];
+          avatarSettings.shape = shapes[shapeIndex];
+          
+          // 更新预览容器样式
+          updatePreviewContainer();
+          
+          drawAvatar();
+        });
+      });
+
+      // 边框宽度
+      // 已在initSliders中处理
+
+      // 边框颜色
+      document.getElementById('borderColor').addEventListener('input', function() {
+        avatarSettings.borderColor = this.value;
+        document.getElementById('borderColorText').value = this.value;
+        drawAvatar();
+      });
+
+      document.getElementById('borderColorText').addEventListener('input', function() {
+        if (isValidHexColor(this.value)) {
+          avatarSettings.borderColor = this.value;
+          document.getElementById('borderColor').value = this.value;
+          drawAvatar();
+        }
+      });
+
+      // 阴影开关
+      document.getElementById('shadowToggle').addEventListener('change', function() {
+        if (this.checked) {
+          // 启用阴影
+          avatarSettings.shadow = true;
+          document.getElementById('shadowOptions').classList.remove('hidden');
+        } else {
+          // 禁用阴影
+          avatarSettings.shadow = false;
+          document.getElementById('shadowOptions').classList.add('hidden');
+        }
+        drawAvatar();
+      });
+
+      // 阴影模糊度
+      // 已在initSliders中处理
+
+      // 阴影扩散
+      // 已在initSliders中处理
+
+      // 阴影颜色
+      document.getElementById('shadowColor').addEventListener('input', function() {
+        avatarSettings.shadowColor = this.value;
+        document.getElementById('shadowColorText').value = this.value;
+        drawAvatar();
+      });
+
+      document.getElementById('shadowColorText').addEventListener('input', function() {
+        if (isValidHexColor(this.value)) {
+          avatarSettings.shadowColor = this.value;
+          document.getElementById('shadowColor').value = this.value;
+          drawAvatar();
+        }
+      });
+
+      // AI推荐
+      document.getElementById('aiRecommendBtn').addEventListener('click', function() {
+        const input = document.getElementById('aiInput').value.trim();
+        if (input) {
+          // 查找匹配的推荐
+          let found = false;
+          for (const keyword in aiRecommendations) {
+            if (input.includes(keyword)) {
+              applyRecommendation(aiRecommendations[keyword]);
+              found = true;
+              showNotification('已应用AI推荐方案');
+              break;
+            }
+          }
+          
+          if (!found) {
+            // 随机推荐一个模板
+            const templates = Object.keys(aiRecommendations);
+            const randomTemplate = templates[Math.floor(Math.random() * templates.length)];
+            applyRecommendation(aiRecommendations[randomTemplate]);
+            showNotification('已应用AI推荐方案');
+          }
+        } else {
+          showNotification('请输入关键词', 'error');
+        }
+      });
+
+      // 重置按钮
+      document.getElementById('resetBtn').addEventListener('click', function() {
+        resetToDefault();
+        showNotification('已重置为默认设置');
+      });
+
+      // 下载按钮
+      document.getElementById('downloadBtn').addEventListener('click', function() {
+        downloadAvatar();
+      });
+
+      document.getElementById('saveBtn').addEventListener('click', function() {
+        downloadAvatar();
+      });
+
+      // 帮助按钮
+      document.getElementById('helpBtn').addEventListener('click', function() {
+        document.getElementById('helpModal').classList.remove('hidden');
+      });
+
+      // 关闭帮助模态框
+      document.getElementById('closeHelpBtn').addEventListener('click', function() {
+        document.getElementById('helpModal').classList.add('hidden');
+      });
+
+      document.getElementById('closeHelpBtnBottom').addEventListener('click', function() {
+        document.getElementById('helpModal').classList.add('hidden');
+      });
+
+      // 点击模态框背景关闭
+      document.getElementById('helpModal').addEventListener('click', function(e) {
+        if (e.target === this) {
+          this.classList.add('hidden');
+        }
+      });
+
+      // 切换开关样式
+      document.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+          const dot = this.nextElementSibling.nextElementSibling;
+          if (this.checked) {
+            dot.classList.add('translate-x-6');
+            this.nextElementSibling.classList.add('bg-primary');
+            this.nextElementSibling.classList.remove('bg-gray-600');
+          } else {
+            dot.classList.remove('translate-x-6');
+            this.nextElementSibling.classList.remove('bg-primary');
+            this.nextElementSibling.classList.add('bg-gray-600');
+          }
+        });
+      });
+    }
+
+    // 加载模板
+    function loadTemplate(templateId) {
+      currentTemplate = templateId;
+      
+      // 获取模板设置
+      const template = templates[templateId];
+      
+      // 更新设置
+      Object.assign(avatarSettings, template);
+      
+      // 更新UI
+      updateUIFromSettings();
+      
+      // 更新预览容器
+      updatePreviewContainer();
+      
+      // 绘制头像
+      drawAvatar();
+    }
+
+    // 从设置更新UI
+    function updateUIFromSettings() {
+      // 文字设置
+      document.getElementById('textInput').value = avatarSettings.text;
+      document.getElementById('fontSize').value = avatarSettings.fontSize;
+      document.getElementById('fontSizeValue').textContent = avatarSettings.fontSize + 'px';
+      document.getElementById('fontFamily').value = avatarSettings.fontFamily;
+      
+      // 文字颜色
+      document.querySelectorAll('#text-content .color-option').forEach(option => {
+        option.classList.remove('active');
+        if (option.dataset.color === avatarSettings.textColor) {
+          option.classList.add('active');
+        }
+      });
+      document.getElementById('customTextColor').value = avatarSettings.textColor;
+      
+      // 文字位置和旋转
+      document.getElementById('textX').value = avatarSettings.textX;
+      document.getElementById('textXValue').textContent = avatarSettings.textX;
+      document.getElementById('textY').value = avatarSettings.textY;
+      document.getElementById('textYValue').textContent = avatarSettings.textY;
+      document.getElementById('textRotation').value = avatarSettings.textRotation;
+      document.getElementById('textRotationValue').textContent = avatarSettings.textRotation + '°';
+      
+      // 背景颜色
+      document.querySelectorAll('#color-content .color-option').forEach(option => {
+        option.classList.remove('active');
+        if (option.dataset.color === avatarSettings.bgColor) {
+          option.classList.add('active');
+        }
+      });
+      document.getElementById('customBgColor').value = avatarSettings.bgColor;
+      
+      // 渐变设置
+      document.getElementById('gradientToggle').checked = avatarSettings.gradient;
+      if (avatarSettings.gradient) {
+        document.getElementById('gradientOptions').classList.remove('hidden');
+        document.getElementById('gradientToggle').nextElementSibling.classList.add('bg-primary');
+        document.getElementById('gradientToggle').nextElementSibling.classList.remove('bg-gray-600');
+        document.getElementById('gradientToggle').nextElementSibling.nextElementSibling.classList.add('translate-x-6');
+      } else {
+        document.getElementById('gradientOptions').classList.add('hidden');
+        document.getElementById('gradientToggle').nextElementSibling.classList.remove('bg-primary');
+        document.getElementById('gradientToggle').nextElementSibling.classList.add('bg-gray-600');
+        document.getElementById('gradientToggle').nextElementSibling.nextElementSibling.classList.remove('translate-x-6');
+      }
+      
+      document.getElementById('gradientColor1').value = avatarSettings.gradientColor1;
+      document.getElementById('gradientColor1Text').value = avatarSettings.gradientColor1;
+      document.getElementById('gradientColor2').value = avatarSettings.gradientColor2;
+      document.getElementById('gradientColor2Text').value = avatarSettings.gradientColor2;
+      document.getElementById('gradientDirection').value = avatarSettings.gradientDirection;
+      
+      // 背景图案
+      document.getElementById('bgPattern').value = avatarSettings.bgPattern;
+      
+      // 形状
+      const shapes = ['circle', 'square', 'rounded-square', 'diamond'];
+      const shapeIndex = shapes.indexOf(avatarSettings.shape);
+      document.querySelectorAll('#shape-content .shape-option').forEach((option, index) => {
+        option.classList.remove('active');
+        if (index === shapeIndex) {
+          option.classList.add('active');
+        }
+      });
+      
+      // 边框
+      document.getElementById('borderWidth').value = avatarSettings.borderWidth;
+      document.getElementById('borderWidthValue').textContent = avatarSettings.borderWidth + 'px';
+      document.getElementById('borderColor').value = avatarSettings.borderColor;
+      document.getElementById('borderColorText').value = avatarSettings.borderColor;
+      
+      // 阴影
+      document.getElementById('shadowToggle').checked = avatarSettings.shadow;
+      if (avatarSettings.shadow) {
+        document.getElementById('shadowOptions').classList.remove('hidden');
+        document.getElementById('shadowToggle').nextElementSibling.classList.add('bg-primary');
+        document.getElementById('shadowToggle').nextElementSibling.classList.remove('bg-gray-600');
+        document.getElementById('shadowToggle').nextElementSibling.nextElementSibling.classList.add('translate-x-6');
+      } else {
+        document.getElementById('shadowOptions').classList.add('hidden');
+        document.getElementById('shadowToggle').nextElementSibling.classList.remove('bg-primary');
+        document.getElementById('shadowToggle').nextElementSibling.classList.add('bg-gray-600');
+        document.getElementById('shadowToggle').nextElementSibling.nextElementSibling.classList.remove('translate-x-6');
+      }
+      
+      document.getElementById('shadowBlur').value = avatarSettings.shadowBlur;
+      document.getElementById('shadowBlurValue').textContent = avatarSettings.shadowBlur + 'px';
+      document.getElementById('shadowSpread').value = avatarSettings.shadowSpread;
+      document.getElementById('shadowSpreadValue').textContent = avatarSettings.shadowSpread + 'px';
+      document.getElementById('shadowColor').value = avatarSettings.shadowColor;
+      document.getElementById('shadowColorText').value = avatarSettings.shadowColor;
+      
+      // 更新滑块背景
+      document.querySelectorAll('input[type="range"]').forEach(slider => {
+        slider.style.backgroundSize = (slider.value - slider.min) / (slider.max - slider.min) * 100 + '% 100%';
+      });
+    }
+
+    // 更新预览容器样式
+    function updatePreviewContainer() {
+      const container = document.getElementById('previewContainer');
+      
+      // 移除所有形状类
+      container.classList.remove('rounded-full', 'rounded-lg', 'rounded-2xl', 'transform', 'rotate-45');
+      
+      // 添加当前形状类
+      switch (avatarSettings.shape) {
+        case 'circle':
+          container.classList.add('rounded-full');
+          break;
+        case 'square':
+          container.classList.add('rounded-lg');
+          break;
+        case 'rounded-square':
+          container.classList.add('rounded-2xl');
+          break;
+        case 'diamond':
+          container.classList.add('transform', 'rotate-45');
+          break;
+      }
+    }
+
+    // 绘制头像
+    function drawAvatar() {
+      // 清除画布
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      
+      // 保存当前状态
+      ctx.save();
+      
+      // 绘制背景
+      drawBackground();
+      
+      // 绘制图案
+      if (avatarSettings.bgPattern !== 'none') {
+        drawPattern();
+      }
+      
+      // 绘制图标
+      drawIcon();
+      
+      // 绘制文字
+      drawText();
+      
+      // 绘制边框
+      drawBorder();
+      
+      // 恢复状态
+      ctx.restore();
+    }
+
+    // 绘制背景
+    function drawBackground() {
+      if (avatarSettings.gradient) {
+        // 创建渐变
+        let gradient;
+        if (avatarSettings.gradientDirection === 'radial') {
+          gradient = ctx.createRadialGradient(
+            canvas.width / 2, canvas.height / 2, 0,
+            canvas.width / 2, canvas.height / 2, canvas.width / 2
+          );
+        } else {
+          gradient = ctx.createLinearGradient(
+            0, 0,
+            avatarSettings.gradientDirection === 'to right' ? canvas.width : 0,
+            avatarSettings.gradientDirection === 'to bottom' ? canvas.height : 
+            (avatarSettings.gradientDirection === 'to bottom right' || avatarSettings.gradientDirection === 'to bottom left') ? canvas.height : 0
+          );
+        }
+        
+        gradient.addColorStop(0, avatarSettings.gradientColor1);
+        gradient.addColorStop(1, avatarSettings.gradientColor2);
+        
+        ctx.fillStyle = gradient;
+      } else {
+        ctx.fillStyle = avatarSettings.bgColor;
+      }
+      
+      // 绘制背景形状
+      ctx.beginPath();
+      switch (avatarSettings.shape) {
+        case 'circle':
+          ctx.arc(canvas.width / 2, canvas.height / 2, canvas.width / 2, 0, Math.PI * 2);
+          break;
+        case 'square':
+        case 'rounded-square':
+          ctx.rect(0, 0, canvas.width, canvas.height);
+          break;
+        case 'diamond':
+          ctx.moveTo(canvas.width / 2, 0);
+          ctx.lineTo(canvas.width, canvas.height / 2);
+          ctx.lineTo(canvas.width / 2, canvas.height);
+          ctx.lineTo(0, canvas.height / 2);
+          ctx.closePath();
+          break;
+      }
+      ctx.fill();
+    }
+
+    // 绘制图案
+    function drawPattern() {
+      ctx.save();
+      
+      switch (avatarSettings.bgPattern) {
+        case 'dots':
+          drawDotsPattern();
+          break;
+        case 'grid':
+          drawGridPattern();
+          break;
+        case 'lines':
+          drawLinesPattern();
+          break;
+        case 'circles':
+          drawCirclesPattern();
+          break;
+        case 'hexagons':
+          drawHexagonsPattern();
+          break;
+      }
+      
+      ctx.restore();
+    }
+
+    // 绘制点状图案
+    function drawDotsPattern() {
+      const dotSize = 4;
+      const spacing = 20;
+      
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.1)';
+      
+      for (let x = spacing; x < canvas.width; x += spacing) {
+        for (let y = spacing; y < canvas.height; y += spacing) {
+          ctx.beginPath();
+          ctx.arc(x, y, dotSize, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+    }
+
+    // 绘制网格图案
+    function drawGridPattern() {
+      const spacing = 20;
+      
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+      ctx.lineWidth = 1;
+      
+      // 绘制垂直线
+      for (let x = spacing; x < canvas.width; x += spacing) {
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, canvas.height);
+        ctx.stroke();
+      }
+      
+      // 绘制水平线
+      for (let y = spacing; y < canvas.height; y += spacing) {
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(canvas.width, y);
+        ctx.stroke();
+      }
+    }
+
+    // 绘制线条图案
+    function drawLinesPattern() {
+      const spacing = 30;
+      
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+      ctx.lineWidth = 2;
+      
+      // 绘制斜线
+      for (let offset = -canvas.height; offset < canvas.width; offset += spacing) {
+        ctx.beginPath();
+        ctx.moveTo(offset, 0);
+        ctx.lineTo(offset + canvas.height, canvas.height);
+        ctx.stroke();
+      }
+    }
+
+    // 绘制圆圈图案
+    function drawCirclesPattern() {
+      const maxRadius = 50;
+      const spacing = 60;
+      
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+      ctx.lineWidth = 1;
+      
+      for (let x = spacing; x < canvas.width; x += spacing) {
+        for (let y = spacing; y < canvas.height; y += spacing) {
+          ctx.beginPath();
+          ctx.arc(x, y, maxRadius, 0, Math.PI * 2);
+          ctx.stroke();
+        }
+      }
+    }
+
+    // 绘制六边形图案
+    function drawHexagonsPattern() {
+      const size = 20;
+      const horizontalSpacing = size * 1.5;
+      const verticalSpacing = size * Math.sqrt(3);
+      
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+      ctx.lineWidth = 1;
+      
+      for (let x = size; x < canvas.width + size; x += horizontalSpacing) {
+        for (let y = size; y < canvas.height + size; y += verticalSpacing) {
+          const offsetX = (Math.floor(y / verticalSpacing) % 2 === 1) ? horizontalSpacing / 2 : 0;
+          
+          ctx.beginPath();
+          for (let i = 0; i < 6; i++) {
+            const angle = (Math.PI / 3) * i;
+            const hexX = x + offsetX + size * Math.cos(angle);
+            const hexY = y + size * Math.sin(angle);
+            
+            if (i === 0) {
+              ctx.moveTo(hexX, hexY);
+            } else {
+              ctx.lineTo(hexX, hexY);
+            }
+          }
+          ctx.closePath();
+          ctx.stroke();
+        }
+      }
+    }
+
+    // 绘制图标
+    function drawIcon() {
+      // 这里简化处理，实际应用中可能需要加载和绘制实际图标
+      // 或者使用SVG图标
+      
+      // 示例：绘制一个简单的代码图标
+      ctx.save();
+      
+      // 移动到图标位置
+      ctx.translate(avatarSettings.iconX, avatarSettings.iconY);
+      
+      // 旋转图标
+      ctx.rotate(avatarSettings.iconRotation * Math.PI / 180);
+      
+      // 设置图标样式
+      ctx.fillStyle = '#3b82f6';
+      
+      // 绘制简单图标（根据选择的图标类型）
+      const iconSize = avatarSettings.iconSize;
+      
+      // 示例：绘制一个简单的代码图标
+      ctx.fillRect(-iconSize / 4, -iconSize / 2, iconSize / 2, iconSize);
+      ctx.fillRect(-iconSize / 2, -iconSize / 4, iconSize, iconSize / 2);
+      
+      ctx.restore();
+    }
+
+    // 绘制文字
+    function drawText() {
+      ctx.save();
+      
+      // 设置文字样式
+      ctx.font = `${avatarSettings.fontSize}px ${avatarSettings.fontFamily}`;
+      ctx.fillStyle = avatarSettings.textColor;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      
+      // 移动到文字位置
+      ctx.translate(avatarSettings.textX, avatarSettings.textY);
+      
+      // 旋转文字
+      ctx.rotate(avatarSettings.textRotation * Math.PI / 180);
+      
+      // 绘制文字
+      ctx.fillText(avatarSettings.text, 0, 0);
+      
+      ctx.restore();
+    }
+
+    // 绘制边框
+    function drawBorder() {
+      if (avatarSettings.borderWidth > 0) {
+        ctx.save();
+        
+        ctx.strokeStyle = avatarSettings.borderColor;
+        ctx.lineWidth = avatarSettings.borderWidth * 2;
+        
+        ctx.beginPath();
+        switch (avatarSettings.shape) {
+          case 'circle':
+            ctx.arc(canvas.width / 2, canvas.height / 2, canvas.width / 2 - avatarSettings.borderWidth, 0, Math.PI * 2);
+            break;
+          case 'square':
+            ctx.rect(avatarSettings.borderWidth, avatarSettings.borderWidth, canvas.width - avatarSettings.borderWidth * 2, canvas.height - avatarSettings.borderWidth * 2);
+            break;
+          case 'rounded-square':
+            const radius = 20;
+            ctx.moveTo(radius, avatarSettings.borderWidth);
+            ctx.lineTo(canvas.width - radius, avatarSettings.borderWidth);
+            ctx.quadraticCurveTo(canvas.width - avatarSettings.borderWidth, avatarSettings.borderWidth, canvas.width - avatarSettings.borderWidth, radius);
+            ctx.lineTo(canvas.width - avatarSettings.borderWidth, canvas.height - radius);
+            ctx.quadraticCurveTo(canvas.width - avatarSettings.borderWidth, canvas.height - avatarSettings.borderWidth, canvas.width - radius, canvas.height - avatarSettings.borderWidth);
+            ctx.lineTo(radius, canvas.height - avatarSettings.borderWidth);
+            ctx.quadraticCurveTo(avatarSettings.borderWidth, canvas.height - avatarSettings.borderWidth, avatarSettings.borderWidth, canvas.height - radius);
+            ctx.lineTo(avatarSettings.borderWidth, radius);
+            ctx.quadraticCurveTo(avatarSettings.borderWidth, avatarSettings.borderWidth, radius, avatarSettings.borderWidth);
+            break;
+          case 'diamond':
+            ctx.moveTo(canvas.width / 2, avatarSettings.borderWidth);
+            ctx.lineTo(canvas.width - avatarSettings.borderWidth, canvas.height / 2);
+            ctx.lineTo(canvas.width / 2, canvas.height - avatarSettings.borderWidth);
+            ctx.lineTo(avatarSettings.borderWidth, canvas.height / 2);
+            ctx.closePath();
+            break;
+        }
+        ctx.stroke();
+        
+        ctx.restore();
+      }
+    }
+
+    // 应用AI推荐
+    function applyRecommendation(recommendation) {
+      // 如果推荐包含模板，加载模板
+      if (recommendation.template) {
+        loadTemplate(recommendation.template);
+      }
+      
+      // 应用其他推荐设置
+      Object.assign(avatarSettings, recommendation);
+      
+      // 更新UI
+      updateUIFromSettings();
+      
+      // 更新预览容器
+      updatePreviewContainer();
+      
+      // 绘制头像
+      drawAvatar();
+    }
+
+    // 重置为默认设置
+    function resetToDefault() {
+      // 重置设置
+      avatarSettings = {
+        text: 'Dev',
+        fontSize: 60,
+        fontFamily: 'Arial, sans-serif',
+        textColor: '#ffffff',
+        textX: 200,
+        textY: 220,
+        textRotation: 0,
+        icon: 'code',
+        iconSize: 100,
+        iconX: 200,
+        iconY: 200,
+        iconRotation: 0,
+        bgColor: '#1e293b',
+        gradient: false,
+        gradientColor1: '#3b82f6',
+        gradientColor2: '#6366f1',
+        gradientDirection: 'to right',
+        bgPattern: 'none',
+        shape: 'circle',
+        borderWidth: 0,
+        borderColor: '#ffffff',
+        shadow: false,
+        shadowBlur: 10,
+        shadowSpread: 0,
+        shadowColor: '#000000'
+      };
+      
+      // 更新UI
+      updateUIFromSettings();
+      
+      // 更新预览容器
+      updatePreviewContainer();
+      
+      // 绘制头像
+      drawAvatar();
+    }
+
+    // 下载头像
+    function downloadAvatar() {
+      // 创建下载链接
+      const link = document.createElement('a');
+      link.download = 'github-avatar.png';
+      
+      // 获取画布数据URL
+      link.href = canvas.toDataURL('image/png');
+      
+      // 触发下载
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      // 显示通知
+      showNotification('头像下载成功');
+    }
+
+    // 显示通知
+    function showNotification(message, type = 'success') {
+      const notification = document.getElementById('notification');
+      const notificationText = document.getElementById('notificationText');
+      
+      // 设置通知文本
+      notificationText.textContent = message;
+      
+      // 设置通知类型
+      notification.className = 'fixed bottom-4 right-4 px-4 py-2 rounded-lg shadow-lg transform transition-all duration-300 z-50 flex items-center';
+      
+      if (type === 'success') {
+        notification.classList.add('bg-green-500', 'text-white');
+        notification.innerHTML = '<i class="fa fa-check-circle mr-2"></i><span>' + message + '</span>';
+      } else if (type === 'error') {
+        notification.classList.add('bg-red-500', 'text-white');
+        notification.innerHTML = '<i class="fa fa-exclamation-circle mr-2"></i><span>' + message + '</span>';
+      } else if (type === 'info') {
+        notification.classList.add('bg-blue-500', 'text-white');
+        notification.innerHTML = '<i class="fa fa-info-circle mr-2"></i><span>' + message + '</span>';
+      }
+      
+      // 显示通知
+      notification.classList.remove('translate-y-20', 'opacity-0');
+      
+      // 3秒后隐藏通知
+      setTimeout(() => {
+        notification.classList.add('translate-y-20', 'opacity-0');
+      }, 3000);
+    }
+
+    // 验证十六进制颜色
+    function isValidHexColor(color) {
+      return /^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/.test(color);
+    }
+  </script>
+</body>
+</html>

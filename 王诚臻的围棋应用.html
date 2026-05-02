@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>自定义围棋 - 全能版</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{background:#f9f3e9;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:12px;transition:all 0.3s}
+        #goBoard{background:#E8C170;border-radius:6px;box-shadow:0 0 25px rgba(0,0,0,0.2);transition:all 0.3s}
+        .ui{margin-top:12px;color:#333;font-size:14px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+        .btn{padding:7px 14px;background:#489CFF;color:#fff;border:none;border-radius:5px;cursor:pointer}
+        .btn:hover{background:#3683E0}
+        select{padding:6px 10px;border-radius:5px;background:#f5f5f5;color:#333;border:1px solid #ccc}
+        .panel{display:flex;gap:8px;align-items:center}
+    </style>
+</head>
+<body>
+
+<canvas id="goBoard"></canvas>
+<div class="ui">
+    <span>当前：<b id="turn">黑棋</b></span>
+
+    <div class="panel">
+        <select id="aiLevel">
+            <option value="0">AI 关闭（双人）</option>
+            <option value="1">AI 新手</option>
+            <option value="2">AI 入门</option>
+            <option value="3">AI 中级</option>
+            <option value="4">AI 高级</option>
+        </select>
+    </div>
+
+    <div class="panel">
+        <select id="boardSize">
+            <option value="9">9x9 小棋盘</option>
+            <option value="13">13x13 中棋盘</option>
+            <option value="19" selected>19x19 标准</option>
+        </select>
+    </div>
+
+    <div class="panel">
+        <select id="bgStyle">
+            <option value="warm" selected>暖色背景</option>
+            <option value="white">白色背景</option>
+            <option value="dark">深色背景</option>
+        </select>
+    </div>
+
+    <div class="panel">
+        <select id="boardColor">
+            <option value="wood" selected>木纹棋盘</option>
+            <option value="white">纯白棋盘</option>
+            <option value="classic">复古棋盘</option>
+        </select>
+    </div>
+
+    <button class="btn" onclick="newGame()">新对局</button>
+    <button class="btn" onclick="undo()">悔棋</button>
+</div>
+
+<script>
+// ================= 配置 =================
+let size = 19;
+const cell = 26;
+const pad = 15;
+let canvas, ctx;
+let board = [];
+let history = [];
+let player = 1;
+let aiLevel = 3;
+
+// ================= 初始化 =================
+window.onload = function(){
+    canvas = document.getElementById("goBoard");
+    ctx = canvas.getContext("2d");
+    resizeBoard();
+    newGame();
+
+    canvas.onclick = clickBoard;
+    canvas.onmousemove = hoverBoard;
+
+    // AI 等级
+    document.getElementById("aiLevel").onchange = e=>aiLevel=+e.target.value;
+
+    // 棋盘大小
+    document.getElementById("boardSize").onchange = e=>{
+        size=+e.target.value;
+        resizeBoard();
+        newGame();
+    };
+
+    // 背景样式
+    document.getElementById("bgStyle").onchange = e=>{
+        let v=e.target.value;
+        if(v==="warm") document.body.style.background="#f9f3e9";
+        if(v==="white") document.body.style.background="#fff";
+        if(v==="dark") document.body.style.background="#222";
+    };
+
+    // 棋盘颜色
+    document.getElementById("boardColor").onchange = e=>{
+        let v=e.target.value;
+        let cvs=document.getElementById("goBoard");
+        if(v==="wood") cvs.style.background="#E8C170";
+        if(v==="white") cvs.style.background="#fff";
+        if(v==="classic") cvs.style.background="#e9c487";
+    };
+};
+
+function resizeBoard(){
+    canvas.width = pad*2 + (size-1)*cell;
+    canvas.height = pad*2 + (size-1)*cell;
+}
+
+// ================= 点击落子 =================
+function clickBoard(e){
+    let r=canvas.getBoundingClientRect();
+    let x=Math.round((e.clientX-r.left-pad)/cell);
+    let y=Math.round((e.clientY-r.top-pad)/cell);
+    if(x<0||x>=size||y<0||y>=size||board[y][x]) return;
+    move(x,y);
+}
+
+function hoverBoard(e){
+    let r=canvas.getBoundingClientRect();
+    let x=Math.round((e.clientX-r.left-pad)/cell);
+    let y=Math.round((e.clientY-r.top-pad)/cell);
+    draw(x,y);
+}
+
+// ================= 落子规则 =================
+function move(x,y){
+    let p=player;
+    let opp=p===1?2:1;
+    let last=history[history.length-1];
+
+    if(last && last.captured?.length===1){
+        let px=last.x,py=last.y;
+        let tmp=JSON.parse(JSON.stringify(board));
+        tmp[y][x]=p;
+        let cap=getCaptured(x,y,p,tmp);
+        if(cap.length===1 && cap[0].x===px && cap[0].y===py) return;
+    }
+
+    let copy=JSON.parse(JSON.stringify(board));
+    copy[y][x]=p;
+    let cap=getCaptured(x,y,p,copy);
+    cap.forEach(c=>copy[c.y][c.x]=0);
+
+    if(!hasLiberty(x,y,p,copy,new Set()) && cap.length===0) return;
+
+    board=copy;
+    history.push({x,y,player:p,captured:cap});
+    player=opp;
+    updateUI();
+    draw();
+
+    if(aiLevel>0 && player===2) setTimeout(aiPlay,500);
+}
+
+// ================= AI =================
+function aiPlay(){
+    let empty=[],score=Array(size).fill().map(()=>Array(size).fill(0));
+    for(let y=0;y<size;y++)for(let x=0;x<size;x++){
+        if(board[y][x]!==0)continue;
+        let t=JSON.parse(JSON.stringify(board));
+        t[y][x]=2;
+        if(!hasLiberty(x,y,2,t,new Set()))continue;
+        empty.push({x,y});
+    }
+    empty.sort(()=>Math.random()-0.5);
+    if(empty.length) move(empty[0].x,empty[0].y);
+}
+
+// ================= 气 & 提子 =================
+function hasLiberty(x,y,p,bd,vis){
+    let k=x+","+y;if(vis.has(k))return false;vis.add(k);
+    let d=[[-1,0],[1,0],[0,-1],[0,1]];
+    for(let[dx,dy]of d){
+        let nx=x+dx,ny=y+dy;
+        if(nx<0||nx>=size||ny<0||ny>=size)continue;
+        if(bd[ny][nx]===0)return true;
+        if(bd[ny][nx]===p && hasLiberty(nx,ny,p,bd,vis))return true;
+    }
+    return false;
+}
+
+function getCaptured(x,y,p,bd){
+    let opp=p===1?2:1,cap=[];
+    let d=[[-1,0],[1,0],[0,-1],[0,1]];
+    for(let[dx,dy]of d){
+        let nx=x+dx,ny=y+dy;
+        if(nx<0||nx>=size||ny<0||ny>=size)continue;
+        if(bd[ny][nx]===opp && !hasLiberty(nx,ny,opp,bd,new Set())) collect(nx,ny,opp,bd,cap);
+    }
+    return cap;
+}
+
+function collect(x,y,p,bd,arr){
+    if(x<0||x>=size||y<0||y>=size||bd[y][x]!==p)return;
+    arr.push({x,y});bd[y][x]=0;
+    let d=[[-1,0],[1,0],[0,-1],[0,1]];
+    for(let[dx,dy]of d) collect(x+dx,y+dy,p,bd,arr);
+}
+
+// ================= 绘制 =================
+function draw(hx=null,hy=null){
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    ctx.strokeStyle="#222";ctx.lineWidth=1;
+    for(let i=0;i<size;i++){
+        ctx.beginPath();ctx.moveTo(pad,pad+i*cell);ctx.lineTo(pad+(size-1)*cell,pad+i*cell);ctx.stroke();
+        ctx.beginPath();ctx.moveTo(pad+i*cell,pad);ctx.lineTo(pad+i*cell,pad+(size-1)*cell);ctx.stroke();
+    }
+    // 星位
+    let s=Math.floor(size/2);
+    let pts=size===9?[s]:size===13?[3,6,9]:[3,9,15];
+    ctx.fillStyle="#000";
+    pts.forEach(a=>pts.forEach(b=>{ctx.beginPath();ctx.arc(pad+a*cell,pad+b*cell,4,0,Math.PI*2);ctx.fill();}));
+
+    // 棋子
+    for(let y=0;y<size;y++)for(let x=0;x<size;x++){
+        if(!board[y][x])continue;
+        drawStone(x,y,board[y][x]);
+    }
+
+    // 预览
+    if(hx!=null&&hy!=null&&!board[hy][hx]&&hx>=0&&hx<size&&hy>=0&&hy<size){
+        ctx.globalAlpha=0.45;drawStone(hx,hy,player);ctx.globalAlpha=1;
+    }
+}
+
+function drawStone(x,y,c){
+    let px=pad+x*cell,py=pad+y*cell;
+    ctx.beginPath();ctx.arc(px,py,cell*0.41,0,Math.PI*2);
+    ctx.fillStyle=c===1?"#000":"#fff";ctx.fill();
+    ctx.strokeStyle="#666";ctx.stroke();
+}
+
+// ================= 控制 =================
+function newGame(){
+    board=Array(size).fill().map(()=>Array(size).fill(0));
+    history=[];player=1;updateUI();draw();
+}
+
+function undo(){
+    if(history.length===0)return;
+    history.pop();
+    if(aiLevel>0&&history.length>0)history.pop();
+    if(history.length===0){newGame();return;}
+    board=Array(size).fill().map(()=>Array(size).fill(0));
+    history.forEach(m=>{board[m.y][m.x]=m.player;});
+    player=history[history.length-1].player===1?2:1;
+    updateUI();draw();
+}
+
+function updateUI(){
+    document.getElementById("turn").innerText=player===1?"黑棋":"白棋";
+}
+</script>
+</body>
+</html>

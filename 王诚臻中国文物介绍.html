@@ -1,0 +1,924 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>中国文物介绍</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome -->
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <!-- Three.js -->
+    <script src="https://cdn.jsdelivr.net/npm/three@0.132.2/build/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.132.2/examples/js/controls/OrbitControls.js"></script>
+    <!-- GSAP 动画库 -->
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.11.4/dist/gsap.min.js"></script>
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#8B0000',
+                        secondary: '#D2B48C',
+                        accent: '#000000',
+                        background: '#F5F5DC',
+                        border: '#8B0000'
+                    },
+                    fontFamily: {
+                        sans: ['Arial', 'sans-serif'],
+                        serif: ['SimSun', 'serif'],
+                        fangsong: ['FangSong', 'serif']
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .scrollbar-hide::-webkit-scrollbar {
+                display: none;
+            }
+            .scrollbar-hide {
+                -ms-overflow-style: none;
+                scrollbar-width: none;
+            }
+            .cloud-pattern {
+                background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M50 50 C55 30, 70 20, 80 30 C90 40, 90 60, 80 70 C70 80, 55 70, 50 50 Z' fill='none' stroke='%238B0000' stroke-width='1' opacity='0.3'/%3E%3C/svg%3E");
+                background-repeat: repeat;
+                background-size: 200px;
+            }
+            .ancient-frame {
+                border: 8px solid;
+                border-image: linear-gradient(45deg, #8B0000, #D2B48C, #8B0000) 1;
+                box-shadow: 0 0 15px rgba(139, 0, 0, 0.3);
+            }
+            .artifact-card {
+                transition: all 0.3s ease;
+            }
+            .artifact-card:hover {
+                transform: translateY(-5px);
+                box-shadow: 0 10px 20px rgba(139, 0, 0, 0.2);
+            }
+            .tab-active {
+                background-color: #8B0000;
+                color: #F5F5DC;
+                border: 2px solid #8B0000;
+            }
+            .tab-inactive {
+                background-color: #F5F5DC;
+                color: #8B0000;
+                border: 2px solid #8B0000;
+            }
+        }
+    </style>
+</head>
+<body class="bg-background font-serif text-accent min-h-screen flex flex-col">
+    <!-- 顶部导航栏 -->
+    <header class="bg-primary text-white py-4 shadow-md">
+        <div class="container mx-auto px-4 flex justify-between items-center">
+            <div class="flex items-center space-x-2">
+                <i class="fa fa-university text-2xl"></i>
+                <h1 class="text-2xl font-fangsong">中国文物宝库</h1>
+            </div>
+            <nav>
+                <ul class="flex space-x-6">
+                    <li><a href="#" class="hover:text-secondary transition-colors duration-300 font-fangsong text-lg" onclick="showSection('home')">首页</a></li>
+                    <li><a href="#" class="hover:text-secondary transition-colors duration-300 font-fangsong text-lg" onclick="showSection('artifacts')">文物浏览</a></li>
+                    <li><a href="#" class="hover:text-secondary transition-colors duration-300 font-fangsong text-lg" onclick="showSection('3d-viewer')">3D鉴赏</a></li>
+                    <li><a href="#" class="hover:text-secondary transition-colors duration-300 font-fangsong text-lg" onclick="showSection('timeline')">历史 timeline</a></li>
+                </ul>
+            </nav>
+            <div class="relative">
+                <input type="text" id="search-input" placeholder="搜索文物..." class="py-1 px-3 rounded-full text-sm text-accent focus:outline-none focus:ring-2 focus:ring-primary">
+                <button onclick="searchArtifacts()" class="absolute right-2 top-1/2 transform -translate-y-1/2 text-accent">
+                    <i class="fa fa-search"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- 主要内容区域 -->
+    <main class="flex-grow container mx-auto px-4 py-8">
+        <!-- 首页部分 -->
+        <section id="home" class="space-y-8">
+            <!-- 轮播图 -->
+            <div class="relative w-full h-96 overflow-hidden ancient-frame">
+                <div id="carousel" class="flex transition-transform duration-500 h-full">
+                    <div class="w-full flex-shrink-0 bg-cover bg-center" style="background-image: url('https://p11-doubao-search-sign.byteimg.com/mosaic-legacy/10640004f6be13e6b14e~tplv-be4g95zd3a-image.jpeg?lk3s=feb11e32&x-expires=1792329441&x-signature=idsGuILLoIMpdt%2B8VUyRkWroc6E%3D')">
+                        <div class="absolute inset-0 bg-black bg-opacity-40 flex flex-col justify-end p-6">
+                            <h2 class="text-white text-3xl font-fangsong">司母戊鼎</h2>
+                            <p class="text-white text-lg">商代晚期青铜器，重达832.84公斤，是迄今世界上出土最大最重的青铜礼器</p>
+                        </div>
+                    </div>
+                    <div class="w-full flex-shrink-0 bg-cover bg-center" style="background-image: url('https://p3-doubao-search-sign.byteimg.com/labis/5a9f12902a77d2aeb75badcae1cc1076~tplv-be4g95zd3a-image.jpeg?lk3s=feb11e32&x-expires=1792329441&x-signature=8OsfbeivlAeK0Xz1QvLR%2B5q3cTI%3D')">
+                        <div class="absolute inset-0 bg-black bg-opacity-40 flex flex-col justify-end p-6">
+                            <h2 class="text-white text-3xl font-fangsong">青花瓷</h2>
+                            <p class="text-white text-lg">明清时期的代表，白底蓝花，典雅大方，是中国陶瓷的瑰宝</p>
+                        </div>
+                    </div>
+                    <div class="w-full flex-shrink-0 bg-cover bg-center" style="background-image: url('https://p11-doubao-search-sign.byteimg.com/labis/6edd1e1626ab00c24f6db7caebe6b6eb~tplv-be4g95zd3a-image.jpeg?lk3s=feb11e32&x-expires=1792329441&x-signature=PNu%2BRMvmuBzxOssAycZhdbiRqVw%3D')">
+                        <div class="absolute inset-0 bg-black bg-opacity-40 flex flex-col justify-end p-6">
+                            <h2 class="text-white text-3xl font-fangsong">唐三彩</h2>
+                            <p class="text-white text-lg">唐代陶器杰作，色彩绚丽，多为马、骆驼等造型，展现盛唐气象</p>
+                        </div>
+                    </div>
+                    <div class="w-full flex-shrink-0 bg-cover bg-center" style="background-image: url('https://p26-doubao-search-sign.byteimg.com/pgc-image/152223142001371b2491411~tplv-be4g95zd3a-image.jpeg?lk3s=feb11e32&x-expires=1792329441&x-signature=scENzDby4FMw3phFswAV1vbcskU%3D')">
+                        <div class="absolute inset-0 bg-black bg-opacity-40 flex flex-col justify-end p-6">
+                            <h2 class="text-white text-3xl font-fangsong">千里江山图</h2>
+                            <p class="text-white text-lg">北宋王希孟的青绿山水画，气势恢宏，是中国十大传世名画之一</p>
+                        </div>
+                    </div>
+                </div>
+                <button onclick="prevSlide()" class="absolute left-4 top-1/2 transform -translate-y-1/2 bg-white bg-opacity-50 hover:bg-opacity-75 rounded-full p-2">
+                    <i class="fa fa-chevron-left"></i>
+                </button>
+                <button onclick="nextSlide()" class="absolute right-4 top-1/2 transform -translate-y-1/2 bg-white bg-opacity-50 hover:bg-opacity-75 rounded-full p-2">
+                    <i class="fa fa-chevron-right"></i>
+                </button>
+                <div class="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex space-x-2">
+                    <button onclick="goToSlide(0)" class="w-3 h-3 rounded-full bg-white bg-opacity-50 hover:bg-opacity-100"></button>
+                    <button onclick="goToSlide(1)" class="w-3 h-3 rounded-full bg-white bg-opacity-50 hover:bg-opacity-100"></button>
+                    <button onclick="goToSlide(2)" class="w-3 h-3 rounded-full bg-white bg-opacity-50 hover:bg-opacity-100"></button>
+                    <button onclick="goToSlide(3)" class="w-3 h-3 rounded-full bg-white bg-opacity-50 hover:bg-opacity-100"></button>
+                </div>
+            </div>
+
+            <!-- 文物分类导航 -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="bg-secondary bg-opacity-30 p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 cursor-pointer" onclick="showSection('artifacts'); filterByCategory('bronze')">
+                    <div class="flex items-center justify-center mb-4">
+                        <img src="https://p11-doubao-search-sign.byteimg.com/mosaic-legacy/10640004f6be13e6b14e~tplv-be4g95zd3a-image.jpeg?lk3s=feb11e32&x-expires=1792329441&x-signature=idsGuILLoIMpdt%2B8VUyRkWroc6E%3D" alt="青铜器" class="w-32 h-32 object-cover rounded-full border-4 border-primary">
+                    </div>
+                    <h3 class="text-2xl text-center font-fangsong text-primary">青铜器</h3>
+                    <p class="text-center mt-2">夏商周时期的青铜礼器、乐器、兵器等，展现了早期中国的冶金技术和艺术成就</p>
+                </div>
+                <div class="bg-secondary bg-opacity-30 p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 cursor-pointer" onclick="showSection('artifacts'); filterByCategory('ceramic')">
+                    <div class="flex items-center justify-center mb-4">
+                        <img src="https://p3-doubao-search-sign.byteimg.com/labis/5a9f12902a77d2aeb75badcae1cc1076~tplv-be4g95zd3a-image.jpeg?lk3s=feb11e32&x-expires=1792329441&x-signature=8OsfbeivlAeK0Xz1QvLR%2B5q3cTI%3D" alt="陶瓷" class="w-32 h-32 object-cover rounded-full border-4 border-primary">
+                    </div>
+                    <h3 class="text-2xl text-center font-fangsong text-primary">陶瓷</h3>
+                    <p class="text-center mt-2">从唐三彩到青花瓷，中国陶瓷以其精湛的工艺和独特的艺术风格闻名于世</p>
+                </div>
+                <div class="bg-secondary bg-opacity-30 p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 cursor-pointer" onclick="showSection('artifacts'); filterByCategory('painting')">
+                    <div class="flex items-center justify-center mb-4">
+                        <img src="https://p26-doubao-search-sign.byteimg.com/pgc-image/152223142001371b2491411~tplv-be4g95zd3a-image.jpeg?lk3s=feb11e32&x-expires=1792329441&x-signature=scENzDby4FMw3phFswAV1vbcskU%3D" alt="书画" class="w-32 h-32 object-cover rounded-full border-4 border-primary">
+                    </div>
+                    <h3 class="text-2xl text-center font-fangsong text-primary">书画</h3>
+                    <p class="text-center mt-2">中国传统书画艺术，包括山水画、人物画、花鸟画等，体现了中国文人的审美情趣</p>
+                </div>
+            </div>
+
+            <!-- 特色文物展示 -->
+            <div class="mt-12">
+                <h2 class="text-3xl font-fangsong text-primary mb-6 text-center border-b-2 border-primary pb-2">特色文物展示</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                    <div class="artifact-card bg-white rounded-lg overflow-hidden shadow-md" onclick="showArtifactDetail('simuwuding')">
+                        <img src="https://p11-doubao-search-sign.byteimg.com/mosaic-legacy/10640004f6be13e6b14e~tplv-be4g95zd3a-image.jpeg?lk3s=feb11e32&x-expires=1792329441&x-signature=idsGuILLoIMpdt%2B8VUyRkWroc6E%3D" alt="司母戊鼎" class="w-full h-48 object-cover">
+                        <div class="p-4">
+                            <h3 class="text-xl font-fangsong text-primary">司母戊鼎</h3>
+                            <p class="text-sm text-gray-600">商代晚期 · 青铜器</p>
+                            <p class="mt-2 text-sm">重达832.84公斤，是迄今世界上出土最大最重的青铜礼器</p>
+                        </div>
+                    </div>
+                    <div class="artifact-card bg-white rounded-lg overflow-hidden shadow-md" onclick="showArtifactDetail('blueandwhite')">
+                        <img src="https://p3-doubao-search-sign.byteimg.com/labis/5a9f12902a77d2aeb75badcae1cc1076~tplv-be4g95zd3a-image.jpeg?lk3s=feb11e32&x-expires=1792329441&x-signature=8OsfbeivlAeK0Xz1QvLR%2B5q3cTI%3D" alt="青花瓷" class="w-full h-48 object-cover">
+                        <div class="p-4">
+                            <h3 class="text-xl font-fangsong text-primary">青花瓷</h3>
+                            <p class="text-sm text-gray-600">明清时期 · 陶瓷</p>
+                            <p class="mt-2 text-sm">白底蓝花，典雅大方，是中国陶瓷的瑰宝</p>
+                        </div>
+                    </div>
+                    <div class="artifact-card bg-white rounded-lg overflow-hidden shadow-md" onclick="showArtifactDetail('tangtricolor')">
+                        <img src="https://p11-doubao-search-sign.byteimg.com/labis/6edd1e1626ab00c24f6db7caebe6b6eb~tplv-be4g95zd3a-image.jpeg?lk3s=feb11e32&x-expires=1792329441&x-signature=PNu%2BRMvmuBzxOssAycZhdbiRqVw%3D" alt="唐三彩" class="w-full h-48 object-cover">
+                        <div class="p-4">
+                            <h3 class="text-xl font-fangsong text-primary">唐三彩</h3>
+                            <p class="text-sm text-gray-600">唐代 · 陶器</p>
+                            <p class="mt-2 text-sm">色彩绚丽，多为马、骆驼等造型，展现盛唐气象</p>
+                        </div>
+                    </div>
+                    <div class="artifact-card bg-white rounded-lg overflow-hidden shadow-md" onclick="showArtifactDetail('qianlijiangshan')">
+                        <img src="https://p26-doubao-search-sign.byteimg.com/pgc-image/152223142001371b2491411~tplv-be4g95zd3a-image.jpeg?lk3s=feb11e32&x-expires=1792329441&x-signature=scENzDby4FMw3phFswAV1vbcskU%3D" alt="千里江山图" class="w-full h-48 object-cover">
+                        <div class="p-4">
+                            <h3 class="text-xl font-fangsong text-primary">千里江山图</h3>
+                            <p class="text-sm text-gray-600">北宋 · 书画</p>
+                            <p class="mt-2 text-sm">王希孟的青绿山水画，气势恢宏，是中国十大传世名画之一</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 文物浏览部分 -->
+        <section id="artifacts" class="hidden space-y-8">
+            <h2 class="text-3xl font-fangsong text-primary mb-6 text-center border-b-2 border-primary pb-2">文物浏览</h2>
+            
+            <!-- 分类标签 -->
+            <div class="flex flex-wrap justify-center gap-4 mb-8">
+                <button class="px-6 py-2 rounded-full font-fangsong text-lg tab-active" onclick="filterByCategory('all')">全部</button>
+                <button class="px-6 py-2 rounded-full font-fangsong text-lg tab-inactive" onclick="filterByCategory('bronze')">青铜器</button>
+                <button class="px-6 py-2 rounded-full font-fangsong text-lg tab-inactive" onclick="filterByCategory('ceramic')">陶瓷</button>
+                <button class="px-6 py-2 rounded-full font-fangsong text-lg tab-inactive" onclick="filterByCategory('painting')">书画</button>
+                <button class="px-6 py-2 rounded-full font-fangsong text-lg tab-inactive" onclick="filterByCategory('jade')">玉器</button>
+                <button class="px-6 py-2 rounded-full font-fangsong text-lg tab-inactive" onclick="filterByCategory('gold')">金银器</button>
+            </div>
+            
+            <!-- 朝代筛选 -->
+            <div class="flex flex-wrap justify-center gap-4 mb-8">
+                <button class="px-4 py-1 rounded-full text-sm bg-secondary bg-opacity-30 hover:bg-opacity-50 transition-colors duration-300" onclick="filterByDynasty('all')">全部朝代</button>
+                <button class="px-4 py-1 rounded-full text-sm bg-secondary bg-opacity-30 hover:bg-opacity-50 transition-colors duration-300" onclick="filterByDynasty('shang')">商代</button>
+                <button class="px-4 py-1 rounded-full text-sm bg-secondary bg-opacity-30 hover:bg-opacity-50 transition-colors duration-300" onclick="filterByDynasty('zhou')">周代</button>
+                <button class="px-4 py-1 rounded-full text-sm bg-secondary bg-opacity-30 hover:bg-opacity-50 transition-colors duration-300" onclick="filterByDynasty('qin')">秦汉</button>
+                <button class="px-4 py-1 rounded-full text-sm bg-secondary bg-opacity-30 hover:bg-opacity-50 transition-colors duration-300" onclick="filterByDynasty('tang')">唐代</button>
+                <button class="px-4 py-1 rounded-full text-sm bg-secondary bg-opacity-30 hover:bg-opacity-50 transition-colors duration-300" onclick="filterByDynasty('song')">宋元</button>
+                <button class="px-4 py-1 rounded-full text-sm bg-secondary bg-opacity-30 hover:bg-opacity-50 transition-colors duration-300" onclick="filterByDynasty('ming')">明清</button>
+            </div>
+            
+            <!-- 文物列表 -->
+            <div id="artifacts-container" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                <!-- 文物卡片将通过JavaScript动态生成 -->
+            </div>
+        </section>
+
+        <!-- 文物详情部分 -->
+        <section id="artifact-detail" class="hidden space-y-8">
+            <button onclick="showSection('artifacts')" class="flex items-center text-primary hover:text-primary-dark transition-colors duration-300">
+                <i class="fa fa-arrow-left mr-2"></i> 返回文物列表
+            </button>
+            
+            <div id="artifact-detail-content" class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <!-- 文物详情内容将通过JavaScript动态生成 -->
+            </div>
+        </section>
+
+        <!-- 3D鉴赏部分 -->
+        <section id="3d-viewer" class="hidden space-y-8">
+            <h2 class="text-3xl font-fangsong text-primary mb-6 text-center border-b-2 border-primary pb-2">3D文物鉴赏</h2>
+            
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <div class="lg:col-span-2">
+                    <div id="3d-container" class="w-full h-96 bg-gray-100 rounded-lg shadow-inner ancient-frame"></div>
+                    <div class="mt-4 flex justify-center space-x-4">
+                        <button onclick="rotateArtifact('left')" class="px-4 py-2 bg-primary text-white rounded hover:bg-primary-dark transition-colors duration-300">
+                            <i class="fa fa-rotate-left mr-2"></i> 向左旋转
+                        </button>
+                        <button onclick="rotateArtifact('right')" class="px-4 py-2 bg-primary text-white rounded hover:bg-primary-dark transition-colors duration-300">
+                            <i class="fa fa-rotate-right mr-2"></i> 向右旋转
+                        </button>
+                        <button onclick="zoomArtifact('in')" class="px-4 py-2 bg-primary text-white rounded hover:bg-primary-dark transition-colors duration-300">
+                            <i class="fa fa-search-plus mr-2"></i> 放大
+                        </button>
+                        <button onclick="zoomArtifact('out')" class="px-4 py-2 bg-primary text-white rounded hover:bg-primary-dark transition-colors duration-300">
+                            <i class="fa fa-search-minus mr-2"></i> 缩小
+                        </button>
+                    </div>
+                </div>
+                <div>
+                    <div class="bg-secondary bg-opacity-30 p-6 rounded-lg shadow-md">
+                        <h3 id="3d-artifact-title" class="text-2xl font-fangsong text-primary mb-4">司母戊鼎</h3>
+                        <p id="3d-artifact-description" class="mb-4">
+                            司母戊鼎（又称后母戊鼎）是商代晚期的青铜器，重达832.84公斤，是迄今世界上出土最大最重的青铜礼器。鼎身四周铸有精巧的盘龙纹和饕餮纹，增加了文物本身的威武凝重之感。
+                        </p>
+                        <div class="space-y-2">
+                            <div class="flex justify-between">
+                                <span class="font-semibold">年代：</span>
+                                <span id="3d-artifact-age">商代晚期</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="font-semibold">出土地点：</span>
+                                <span id="3d-artifact-location">河南省安阳市武官村</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="font-semibold">尺寸：</span>
+                                <span id="3d-artifact-size">高133厘米，口长110厘米，口宽79厘米</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="font-semibold">收藏地：</span>
+                                <span id="3d-artifact-museum">中国国家博物馆</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-6">
+                        <h4 class="text-xl font-fangsong text-primary mb-4">选择文物</h4>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div class="cursor-pointer hover:bg-secondary hover:bg-opacity-30 p-2 rounded" onclick="change3DArtifact('simuwuding')">
+                                <img src="https://p11-doubao-search-sign.byteimg.com/mosaic-legacy/10640004f6be13e6b14e~tplv-be4g95zd3a-image.jpeg?lk3s=feb11e32&x-expires=1792329441&x-signature=idsGuILLoIMpdt%2B8VUyRkWroc6E%3D" alt="司母戊鼎" class="w-full h-24 object-cover rounded">
+                                <p class="text-center mt-2 text-sm">司母戊鼎</p>
+                            </div>
+                            <div class="cursor-pointer hover:bg-secondary hover:bg-opacity-30 p-2 rounded" onclick="change3DArtifact('blueandwhite')">
+                                <img src="https://p3-doubao-search-sign.byteimg.com/labis/5a9f12902a77d2aeb75badcae1cc1076~tplv-be4g95zd3a-image.jpeg?lk3s=feb11e32&x-expires=1792329441&x-signature=8OsfbeivlAeK0Xz1QvLR%2B5q3cTI%3D" alt="青花瓷" class="w-full h-24 object-cover rounded">
+                                <p class="text-center mt-2 text-sm">青花瓷瓶</p>
+                            </div>
+                            <div class="cursor-pointer hover:bg-secondary hover:bg-opacity-30 p-2 rounded" onclick="change3DArtifact('jade_dragon')">
+                                <img src="https://p3-doubao-search-sign.byteimg.com/tos-cn-i-be4g95zd3a/2328473904983965706~tplv-be4g95zd3a-image.jpeg?lk3s=feb11e32&x-expires=1792329441&x-signature=eZILMzUgelZhNttWcRZuFzDjer0%3D" alt="红山文化玉龙" class="w-full h-24 object-cover rounded">
+                                <p class="text-center mt-2 text-sm">红山文化玉龙</p>
+                            </div>
+                            <div class="cursor-pointer hover:bg-secondary hover:bg-opacity-30 p-2 rounded" onclick="change3DArtifact('tang_horse')">
+                                <img src="https://p11-doubao-search-sign.byteimg.com/labis/6edd1e1626ab00c24f6db7caebe6b6eb~tplv-be4g95zd3a-image.jpeg?lk3s=feb11e32&x-expires=1792329441&x-signature=PNu%2BRMvmuBzxOssAycZhdbiRqVw%3D" alt="唐三彩马" class="w-full h-24 object-cover rounded">
+                                <p class="text-center mt-2 text-sm">唐三彩马</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 历史时间线部分 -->
+        <section id="timeline" class="hidden space-y-8">
+            <h2 class="text-3xl font-fangsong text-primary mb-6 text-center border-b-2 border-primary pb-2">文物历史时间线</h2>
+            
+            <div class="relative">
+                <!-- 时间线轴 -->
+                <div class="absolute left-1/2 transform -translate-x-1/2 h-full w-1 bg-primary"></div>
+                
+                <!-- 时间线内容 -->
+                <div class="space-y-12">
+                    <!-- 商代 -->
+                    <div class="relative">
+                        <div class="absolute left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-6 h-6 rounded-full bg-primary border-4 border-secondary"></div>
+                        <div class="flex flex-col md:flex-row items-center">
+                            <div class="md:w-1/2 md:pr-12 md:text-right mb-6 md:mb-0">
+                                <h3 class="text-2xl font-fangsong text-primary">商代 (约公元前1600年-公元前1046年)</h3>
+                                <p class="mt-2">商代是中国青铜文明的鼎盛时期，青铜器制作工艺精湛，器型多样，纹饰丰富。</p>
+                            </div>
+                            <div class="md:w-1/2 md:pl-12">
+                                <div class="bg-white p-4 rounded-lg shadow-md">
+                                    <img src="https://p11-doubao-search-sign.byteimg.com/mosaic-legacy/10640004f6be13e6b14e~tplv-be4g95zd3a-image.jpeg?lk3s=feb11e32&x-expires=1792329441&x-signature=idsGuILLoIMpdt%2B8VUyRkWroc6E%3D" alt="司母戊鼎" class="w-full h-48 object-cover rounded">
+                                    <h4 class="text-xl font-fangsong text-primary mt-2">司母戊鼎</h4>
+                                    <p class="text-sm text-gray-600 mt-1">商代晚期青铜器，重达832.84公斤，是迄今世界上出土最大最重的青铜礼器</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 唐代 -->
+                    <div class="relative">
+                        <div class="absolute left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-6 h-6 rounded-full bg-primary border-4 border-secondary"></div>
+                        <div class="flex flex-col md:flex-row items-center">
+                            <div class="md:w-1/2 md:pr-12 md:text-right mb-6 md:mb-0 md:order-2">
+                                <div class="bg-white p-4 rounded-lg shadow-md">
+                                    <img src="https://p11-doubao-search-sign.byteimg.com/labis/6edd1e1626ab00c24f6db7caebe6b6eb~tplv-be4g95zd3a-image.jpeg?lk3s=feb11e32&x-expires=1792329441&x-signature=PNu%2BRMvmuBzxOssAycZhdbiRqVw%3D" alt="唐三彩马" class="w-full h-48 object-cover rounded">
+                                    <h4 class="text-xl font-fangsong text-primary mt-2">唐三彩马</h4>
+                                    <p class="text-sm text-gray-600 mt-1">唐代陶器杰作，色彩绚丽，展现了盛唐时期的繁荣气象</p>
+                                </div>
+                            </div>
+                            <div class="md:w-1/2 md:pl-12 md:order-1">
+                                <h3 class="text-2xl font-fangsong text-primary">唐代 (公元618年-公元907年)</h3>
+                                <p class="mt-2">唐代是中国陶瓷发展的黄金时期，唐三彩以其绚丽的色彩和生动的造型著称于世。</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 宋代 -->
+                    <div class="relative">
+                        <div class="absolute left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-6 h-6 rounded-full bg-primary border-4 border-secondary"></div>
+                        <div class="flex flex-col md:flex-row items-center">
+                            <div class="md:w-1/2 md:pr-12 md:text-right mb-6 md:mb-0">
+                                <h3 class="text-2xl font-fangsong text-primary">宋代 (公元960年-公元1279年)</h3>
+                                <p class="mt-2">宋代是中国绘画艺术的高峰时期，山水画、花鸟画等题材得到了极大的发展。</p>
+                            </div>
+                            <div class="md:w-1/2 md:pl-12">
+                                <div class="bg-white p-4 rounded-lg shadow-md">
+                                    <img src="https://p26-doubao-search-sign.byteimg.com/pgc-image/152223142001371b2491411~tplv-be4g95zd3a-image.jpeg?lk3s=feb11e32&x-expires=1792329441&x-signature=scENzDby4FMw3phFswAV1vbcskU%3D" alt="千里江山图" class="w-full h-48 object-cover rounded">
+                                    <h4 class="text-xl font-fangsong text-primary mt-2">千里江山图</h4>
+                                    <p class="text-sm text-gray-600 mt-1">北宋王希孟的青绿山水画，气势恢宏，是中国十大传世名画之一</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 明清 -->
+                    <div class="relative">
+                        <div class="absolute left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-6 h-6 rounded-full bg-primary border-4 border-secondary"></div>
+                        <div class="flex flex-col md:flex-row items-center">
+                            <div class="md:w-1/2 md:pr-12 md:text-right mb-6 md:mb-0 md:order-2">
+                                <div class="bg-white p-4 rounded-lg shadow-md">
+                                    <img src="https://p3-doubao-search-sign.byteimg.com/labis/5a9f12902a77d2aeb75badcae1cc1076~tplv-be4g95zd3a-image.jpeg?lk3s=feb11e32&x-expires=1792329441&x-signature=8OsfbeivlAeK0Xz1QvLR%2B5q3cTI%3D" alt="青花瓷" class="w-full h-48 object-cover rounded">
+                                    <h4 class="text-xl font-fangsong text-primary mt-2">青花瓷</h4>
+                                    <p class="text-sm text-gray-600 mt-1">明清时期的代表，白底蓝花，典雅大方，是中国陶瓷的瑰宝</p>
+                                </div>
+                            </div>
+                            <div class="md:w-1/2 md:pl-12 md:order-1">
+                                <h3 class="text-2xl font-fangsong text-primary">明清时期 (公元1368年-公元1912年)</h3>
+                                <p class="mt-2">明清时期是中国青花瓷的鼎盛时期，景德镇成为全国的制瓷中心，青花瓷以其精湛的工艺和独特的艺术风格闻名于世。</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- 底部信息栏 -->
+    <footer class="bg-primary text-white py-6">
+        <div class="container mx-auto px-4">
+            <div class="flex flex-col md:flex-row justify-between items-center">
+                <div class="mb-4 md:mb-0">
+                    <h3 class="text-xl font-fangsong">中国文物宝库</h3>
+                    <p class="text-sm mt-1">探索中华文明的瑰宝</p>
+                </div>
+                <div class="flex space-x-4">
+                    <a href="#" class="hover:text-secondary transition-colors duration-300">
+                        <i class="fa fa-facebook-square text-2xl"></i>
+                    </a>
+                    <a href="#" class="hover:text-secondary transition-colors duration-300">
+                        <i class="fa fa-twitter-square text-2xl"></i>
+                    </a>
+                    <a href="#" class="hover:text-secondary transition-colors duration-300">
+                        <i class="fa fa-instagram text-2xl"></i>
+                    </a>
+                    <a href="#" class="hover:text-secondary transition-colors duration-300">
+                        <i class="fa fa-youtube-square text-2xl"></i>
+                    </a>
+                </div>
+            </div>
+            <div class="mt-6 text-center text-sm">
+                <p>&copy; 2026 中国文物宝库. 保留所有权利.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // 文物数据
+        const artifactsData = [
+            {
+                id: 'simuwuding',
+                name: '司母戊鼎',
+                category: 'bronze',
+                dynasty: 'shang',
+                period: '商代晚期',
+                description: '司母戊鼎（又称后母戊鼎）是商代晚期的青铜器，重达832.84公斤，是迄今世界上出土最大最重的青铜礼器。鼎身四周铸有精巧的盘龙纹和饕餮纹，增加了文物本身的威武凝重之感。',
+                details: '司母戊鼎因鼎腹内壁上铸有"后母戊"三个字的铭文而得名。"后母戊"三字的字体笔势雄健，形体丰腴，笔画的起止多显峰露芒，间用肥笔。此鼎形制巨大，雄伟庄严，工艺精巧；鼎身四周铸有精巧的盘龙纹和饕餮纹，增加了文物本身的威武凝重之感。饕餮是传说中喜欢吃各种食物的神兽，把它铸在青铜器上，表示吉祥、丰年足食。耳廓纹饰俗称虎咬人头纹，这种纹饰是在耳的左右作虎形，虎头绕到耳的上部张口相向，虎的中间有一人头，好像被虎所吞噬。鼎足的纹饰也很有特色，在三道弦纹之上各饰以兽面。',
+                history: '司母戊鼎于1939年3月在河南省安阳市武官村出土，是商王祖庚或祖甲为祭祀其母戊（即商王武丁之妻）所制，为商周时期青铜文化的代表作。最初，经郭沫若等相关专家学者考证后，将其定名为"司母戊鼎"，后更名为"后母戊鼎"。',
+                significance: '司母戊鼎的铸造，充分说明商代后期的青铜铸造不仅规模宏大，而且组织严密，分工细致，足以代表高度发达的商代青铜文化。它是中国古代青铜文明的杰出代表，也是中国历史文化的重要象征。',
+                image: 'https://p11-doubao-search-sign.byteimg.com/mosaic-legacy/10640004f6be13e6b14e~tplv-be4g95zd3a-image.jpeg?lk3s=feb11e32&x-expires=1792329441&x-signature=idsGuILLoIMpdt%2B8VUyRkWroc6E%3D',
+                location: '河南省安阳市武官村',
+                size: '高133厘米，口长110厘米，口宽79厘米',
+                museum: '中国国家博物馆'
+            },
+            {
+                id: 'blueandwhite',
+                name: '青花瓷',
+                category: 'ceramic',
+                dynasty: 'ming',
+                period: '明清时期',
+                description: '青花瓷是用含钴彩料在坯体上描绘纹饰图案后，施透明釉，经高温一次烧成所得的瓷器。青花瓷呈现白地蓝花的艺术特征，是釉下彩瓷的代表。',
+                details: '青花瓷是用青料彩饰在釉下，彩料能完全和坯、釉结合，化学稳定性好，经受各种腐蚀、高温蒸煮等，釉面均匀，不致脱落褪色。作主要呈色剂的钴土矿，在其组成中含有镍、锰等成分，发色鲜艳，来源丰富。后来采用人工合成的氧化钴彩料代替，效果亦佳。以石灰石为主配制的釉料，烧成范围较宽，呈色稳定，附着力强，釉面硬度较高，化学稳定性及热稳定性较好，釉层厚而透明度高，不易"蒙花"（画面不清）。',
+                history: '青花瓷可追溯到唐朝，唐青花的产地被认为是河南巩县窑，当时多为出口贸易瓷。两宋也有青花瓷出现，但唐宋青花瓷属于原始阶段，工艺不成熟。元代景德镇出现用钴料绘画的青花瓷，是青花瓷的成熟时期，元青花发色深沉艳丽，纹饰繁复。明代永乐、宣德时期，景德镇的青花细瓷出现新的高峰；清康熙时，青花瓷以"五彩青花"发展到巅峰。',
+                significance: '青花瓷是中国陶瓷史上的重要里程碑，它的出现开创了中国陶瓷装饰的新纪元。青花瓷以其典雅的艺术风格和精湛的工艺，成为中国陶瓷的代表品种，也是中国文化的重要象征。',
+                image: 'https://p3-doubao-search-sign.byteimg.com/labis/5a9f12902a77d2aeb75badcae1cc1076~tplv-be4g95zd3a-image.jpeg?lk3s=feb11e32&x-expires=1792329441&x-signature=8OsfbeivlAeK0Xz1QvLR%2B5q3cTI%3D',
+                location: '江西省景德镇',
+                size: ' varies',
+                museum: '故宫博物院'
+            },
+            {
+                id: 'tangtricolor',
+                name: '唐三彩',
+                category: 'ceramic',
+                dynasty: 'tang',
+                period: '唐代',
+                description: '唐三彩(Tang Tri-Color Glazed Ceramics)，全称"唐代三彩釉陶器"，盛行于唐朝时期，属于低温釉陶器，釉色有黄、绿、白、褐、蓝、黑等，多以黄、绿、白三色为基本釉色，所以人们习惯称之为"唐三彩"。',
+                details: '唐三彩是一种低温铅釉陶器，釉彩主要成分有石英、硅酸铅和各种金属氧化物。其中，石英可以增加釉料色泽的光亮度;铅作为溶剂能够降低釉料的熔点，使釉料在700℃左右就可以达到熔融状态，且唐三彩使用的多是含铅量极高的软玻璃釉，流动性极佳，随着窑炉内温度的增高，含有铁、铜、钴、锰、锑、铬等金属元素的氧化物，会呈现出不同的颜色,并向四周流动扩散，最终形成自然斑驳的视觉效果，另外铅还具有良好的折射光度，使烧制后的唐三彩带有玻璃色泽。',
+                history: '唐三彩是在汉代低温铅釉陶和南北朝的多釉色陶的双重基础上创新演变出来的新品种。其具体诞生时间没有明确记载，但据对有纪年的唐墓考察发现，唐三彩器应兴起于唐高宗时期。初唐时期，唐三彩的制作工艺较为简单，产品类型也比较少。盛唐时期，唐三彩的烧制进入了高峰期，制作工艺复杂，产品质量上乘，是十分典型的唐三彩作品。晚唐时期，唐三彩的制作与发展出现了衰退现象，不仅制作范围越来越小，制作工艺也略显粗糙。',
+                significance: '唐三彩标志着陶瓷烧制技艺从单色到多色的进一步突破，是唐代手工业方面的一项杰出成就，也是中国本土文化与异域文化相互碰撞而形成的代表性艺术产物。唐三彩的出土和研究，为我们了解唐代的社会生活、文化艺术和对外交流提供了重要的实物资料。',
+                image: 'https://p11-doubao-search-sign.byteimg.com/labis/6edd1e1626ab00c24f6db7caebe6b6eb~tplv-be4g95zd3a-image.jpeg?lk3s=feb11e32&x-expires=1792329441&x-signature=PNu%2BRMvmuBzxOssAycZhdbiRqVw%3D',
+                location: '河南省洛阳市',
+                size: ' varies',
+                museum: '洛阳博物馆'
+            },
+            {
+                id: 'qianlijiangshan',
+                name: '千里江山图',
+                category: 'painting',
+                dynasty: 'song',
+                period: '北宋',
+                description: '《千里江山图》是北宋王希孟创作的绢本设色画，是中国十大传世名画之一，现收藏于北京故宫博物院。',
+                details: '《千里江山图》为大青绿设色绢本，纵51.5厘米，横1191.5厘米，气势辽阔超凡。全卷画面上层峰峦叠嶂、逶迤连绵，图中繁复的林木村野、舟船桥梁、楼台殿阁、各种人物布局井然有序。画中山石先以墨色勾皴，后施青绿重彩，用石青石绿烘染山峦顶部，显示青山叠翠。江河勾出水纹，与没骨色彩形成反差对比。全图既壮阔雄浑而又细腻精到，是青绿山水画中的一幅巨制杰作。',
+                history: '《千里江山图》是北宋晚期著名画家王希孟唯一的传世作品。王希孟18岁为北宋画院学生，后召入禁中文书库，曾得到宋徽宗赵佶的亲自传授，半年后即创作了《千里江山图》。惜年寿不永，20余岁即去世，是一位天才而又不幸早亡的优秀青年画家。',
+                significance: '《千里江山图》不仅代表了北宋青绿山水画的最高成就，而且也是中国传统绘画中具有独特艺术价值和历史价值的重要作品。它以长卷形式，描绘了连绵的群山冈峦和浩渺的江河湖水，于山岭、坡岸、水际中布置、点缀亭台楼阁、茅居村舍，水磨长桥及捕鱼、驶船、行旅、飞鸟等，描绘精细，意态生动。景物繁多，气象万千，构图于疏密之中讲求变化，气势连贯，以披麻与斧劈皴相合，表现山石的肌理脉络和明暗变化；设色匀净清丽，于青绿中间以赭色，富有变化和装饰性。作品意境雄浑壮阔，气势恢宏，充分表现了自然山水的秀丽壮美。',
+                image: 'https://p26-doubao-search-sign.byteimg.com/pgc-image/152223142001371b2491411~tplv-be4g95zd3a-image.jpeg?lk3s=feb11e32&x-expires=1792329441&x-signature=scENzDby4FMw3phFswAV1vbcskU%3D',
+                location: '北宋都城汴京（今河南开封）',
+                size: '纵51.5厘米，横1191.5厘米',
+                museum: '故宫博物院'
+            },
+            {
+                id: 'jade_dragon',
+                name: '红山文化玉龙',
+                category: 'jade',
+                dynasty: 'prehistoric',
+                period: '红山文化时期',
+                description: '红山文化玉龙是中国最早的龙形玉器之一，也是红山文化的代表性文物，现收藏于中国国家博物馆。',
+                details: '红山玉龙呈勾曲形，口闭吻长，鼻端前突，上翘起棱，端面截平，有并排两个鼻孔，颈上有长毛，尾部尖收而上卷，形体酷似甲骨文中的"龙"字。玉龙墨绿色，体卷曲，平面形状如一"C"字，龙体横截面为椭圆形，直径2.3~2.9厘米。龙首较短小，吻前伸，略上噘，嘴紧闭，鼻端截平，端面近椭圆形，以对称的两个圆洞作为鼻孔。龙眼突起呈棱形，前面圆而起棱，眼尾细长上翘。颈背有一长鬣，弯曲上卷，长21厘米，占龙体三分之一以上。鬣扁薄，并磨出不显著的浅凹槽，边缘打磨锐利。龙身大部光素无纹，只在额及鄂底刻以细密的方格网状纹。',
+                history: '红山文化玉龙于1971年出土于内蒙古赤峰市翁牛特旗三星他拉村。红山文化是中国东北地区的新石器时代文化，距今约5000-6000年。红山文化以精美的玉器著称，其中玉龙是红山文化玉器的代表作品。',
+                significance: '红山文化玉龙是中国已发现的最早的龙形玉器之一，它的发现为研究中国龙文化的起源提供了重要的实物资料。玉龙的造型简洁明快，工艺精湛，反映了红山文化时期高度发达的玉器制作工艺和独特的审美观念。',
+                image: 'https://p3-doubao-search-sign.byteimg.com/tos-cn-i-be4g95zd3a/2328473904983965706~tplv-be4g95zd3a-image.jpeg?lk3s=feb11e32&x-expires=1792329441&x-signature=eZILMzUgelZhNttWcRZuFzDjer0%3D',
+                location: '内蒙古赤峰市翁牛特旗三星他拉村',
+                size: '高26厘米',
+                museum: '中国国家博物馆'
+            },
+            {
+                id: 'gold_silver',
+                name: '唐代金银器',
+                category: 'gold',
+                dynasty: 'tang',
+                period: '唐代',
+                description: '唐代金银器是中国古代金银器制作的鼎盛时期的代表作品，以其精湛的工艺和丰富的装饰纹样闻名于世。',
+                details: '唐代金银器的制作工艺非常精湛，采用了锤击、浇铸、焊接、切削、抛光、铆、镀、刻凿等多种工艺技术。唐代金银器的装饰纹样丰富多彩，包括植物纹、动物纹、人物纹、几何纹等，其中植物纹以忍冬纹、缠枝纹、宝相花等最为常见；动物纹以狮子、麒麟、凤凰、孔雀等祥瑞动物为主；人物纹则多表现狩猎、乐舞、宴饮等场景。',
+                history: '唐代是中国金银器制作的鼎盛时期，这一时期的金银器制作工艺达到了前所未有的高度。唐代金银器的发展与唐代的政治、经济、文化密切相关。唐代国力强盛，对外交流频繁，为金银器的发展提供了有利的条件。唐代金银器的出土主要集中在陕西、河南、江苏等地，其中以陕西西安何家村窖藏出土的金银器最为著名。',
+                significance: '唐代金银器不仅是唐代物质文化的重要组成部分，也是唐代精神文化的重要载体。它们反映了唐代的社会生活、审美观念、宗教信仰和对外交流等方面的情况，是研究唐代历史文化的重要实物资料。唐代金银器的制作工艺和装饰艺术对后世的金银器制作产生了深远的影响。',
+                image: 'https://p11-doubao-search-sign.byteimg.com/labis/377ab773bf781dbb246eb96209edd81e~tplv-be4g95zd3a-image.jpeg?lk3s=feb11e32&x-expires=1792329441&x-signature=qF%2FnDcv%2FHFOtYYHPDjJfHn1bZ90%3D',
+                location: '陕西省西安市何家村',
+                size: ' varies',
+                museum: '陕西历史博物馆'
+            }
+        ];
+
+        // 当前轮播图索引
+        let currentSlide = 0;
+        const totalSlides = 4;
+
+        // 轮播图自动播放
+        setInterval(() => {
+            nextSlide();
+        }, 5000);
+
+        // 显示下一张轮播图
+        function nextSlide() {
+            currentSlide = (currentSlide + 1) % totalSlides;
+            updateCarousel();
+        }
+
+        // 显示上一张轮播图
+        function prevSlide() {
+            currentSlide = (currentSlide - 1 + totalSlides) % totalSlides;
+            updateCarousel();
+        }
+
+        // 跳转到指定轮播图
+        function goToSlide(index) {
+            currentSlide = index;
+            updateCarousel();
+        }
+
+        // 更新轮播图显示
+        function updateCarousel() {
+            const carousel = document.getElementById('carousel');
+            carousel.style.transform = `translateX(-${currentSlide * 100}%)`;
+            
+            // 更新指示器
+            const indicators = document.querySelectorAll('.absolute.bottom-4 button');
+            indicators.forEach((indicator, index) => {
+                if (index === currentSlide) {
+                    indicator.classList.add('bg-opacity-100');
+                    indicator.classList.remove('bg-opacity-50');
+                } else {
+                    indicator.classList.remove('bg-opacity-100');
+                    indicator.classList.add('bg-opacity-50');
+                }
+            });
+        }
+
+        // 显示指定部分
+        function showSection(sectionId) {
+            // 隐藏所有部分
+            document.querySelectorAll('main > section').forEach(section => {
+                section.classList.add('hidden');
+            });
+            
+            // 显示指定部分
+            document.getElementById(sectionId).classList.remove('hidden');
+            
+            // 如果是文物浏览部分，加载文物列表
+            if (sectionId === 'artifacts') {
+                loadArtifacts();
+            }
+            
+            // 如果是3D鉴赏部分，初始化3D场景
+            if (sectionId === '3d-viewer') {
+                init3DScene();
+            }
+        }
+
+        // 加载文物列表
+        function loadArtifacts() {
+            const container = document.getElementById('artifacts-container');
+            container.innerHTML = '';
+            
+            artifactsData.forEach(artifact => {
+                const card = document.createElement('div');
+                card.className = 'artifact-card bg-white rounded-lg overflow-hidden shadow-md';
+                card.onclick = () => showArtifactDetail(artifact.id);
+                
+                card.innerHTML = `
+                    <img src="${artifact.image}" alt="${artifact.name}" class="w-full h-48 object-cover">
+                    <div class="p-4">
+                        <h3 class="text-xl font-fangsong text-primary">${artifact.name}</h3>
+                        <p class="text-sm text-gray-600">${artifact.period} · ${getCategoryName(artifact.category)}</p>
+                        <p class="mt-2 text-sm">${artifact.description.substring(0, 80)}...</p>
+                    </div>
+                `;
+                
+                container.appendChild(card);
+            });
+        }
+
+        // 显示文物详情
+        function showArtifactDetail(artifactId) {
+            const artifact = artifactsData.find(a => a.id === artifactId);
+            if (!artifact) return;
+            
+            const content = document.getElementById('artifact-detail-content');
+            content.innerHTML = `
+                <div>
+                    <img src="${artifact.image}" alt="${artifact.name}" class="w-full h-auto rounded-lg shadow-md ancient-frame">
+                    <div class="mt-6 grid grid-cols-2 gap-4">
+                        <div class="bg-secondary bg-opacity-30 p-4 rounded-lg">
+                            <h4 class="font-fangsong text-primary mb-2">基本信息</h4>
+                            <ul class="space-y-2">
+                                <li><span class="font-semibold">年代：</span>${artifact.period}</li>
+                                <li><span class="font-semibold">类别：</span>${getCategoryName(artifact.category)}</li>
+                                <li><span class="font-semibold">出土地点：</span>${artifact.location}</li>
+                                <li><span class="font-semibold">尺寸：</span>${artifact.size}</li>
+                                <li><span class="font-semibold">收藏地：</span>${artifact.museum}</li>
+                            </ul>
+                        </div>
+                        <div class="bg-secondary bg-opacity-30 p-4 rounded-lg">
+                            <h4 class="font-fangsong text-primary mb-2">历史背景</h4>
+                            <p>${artifact.history.substring(0, 200)}...</p>
+                            <button class="mt-2 text-primary hover:underline" onclick="toggleDetails('history', this)">查看更多</button>
+                            <div id="history-details" class="hidden mt-2">
+                                <p>${artifact.history}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div>
+                    <h3 class="text-2xl font-fangsong text-primary mb-4">${artifact.name}</h3>
+                    <p class="mb-4">${artifact.description}</p>
+                    <div class="bg-white p-6 rounded-lg shadow-md">
+                        <h4 class="font-fangsong text-primary mb-4">文物细节</h4>
+                        <p>${artifact.details}</p>
+                    </div>
+                    <div class="mt-6 bg-white p-6 rounded-lg shadow-md">
+                        <h4 class="font-fangsong text-primary mb-4">文化意义</h4>
+                        <p>${artifact.significance}</p>
+                    </div>
+                    <div class="mt-6 flex justify-center">
+                        <button class="px-6 py-2 bg-primary text-white rounded hover:bg-primary-dark transition-colors duration-300" onclick="showSection('3d-viewer'); change3DArtifact('${artifact.id}')">
+                            <i class="fa fa-cube mr-2"></i> 3D鉴赏
+                        </button>
+                    </div>
+                </div>
+            `;
+            
+            showSection('artifact-detail');
+        }
+
+        // 切换详情显示
+        function toggleDetails(type, button) {
+            const details = document.getElementById(`${type}-details`);
+            if (details.classList.contains('hidden')) {
+                details.classList.remove('hidden');
+                button.textContent = '收起';
+            } else {
+                details.classList.add('hidden');
+                button.textContent = '查看更多';
+            }
+        }
+
+        // 按类别筛选文物
+        function filterByCategory(category) {
+            const container = document.getElementById('artifacts-container');
+            const cards = container.querySelectorAll('.artifact-card');
+            
+            // 更新标签样式
+            document.querySelectorAll('#artifacts .flex.justify-center.gap-4.mb-8:first-child button').forEach(btn => {
+                if (btn.textContent.trim() === '全部' && category === 'all') {
+                    btn.classList.add('tab-active');
+                    btn.classList.remove('tab-inactive');
+                } else if (btn.textContent.trim() === getCategoryName(category) && category !== 'all') {
+                    btn.classList.add('tab-active');
+                    btn.classList.remove('tab-inactive');
+                } else {
+                    btn.classList.remove('tab-active');
+                    btn.classList.add('tab-inactive');
+                }
+            });
+            
+            if (category === 'all') {
+                cards.forEach(card => {
+                    card.style.display = 'block';
+                });
+            } else {
+                cards.forEach((card, index) => {
+                    if (artifactsData[index].category === category) {
+                        card.style.display = 'block';
+                    } else {
+                        card.style.display = 'none';
+                    }
+                });
+            }
+        }
+
+        // 按朝代筛选文物
+        function filterByDynasty(dynasty) {
+            const container = document.getElementById('artifacts-container');
+            const cards = container.querySelectorAll('.artifact-card');
+            
+            if (dynasty === 'all') {
+                cards.forEach(card => {
+                    card.style.display = 'block';
+                });
+            } else {
+                cards.forEach((card, index) => {
+                    if (artifactsData[index].dynasty === dynasty) {
+                        card.style.display = 'block';
+                    } else {
+                        card.style.display = 'none';
+                    }
+                });
+            }
+        }
+
+        // 搜索文物
+        function searchArtifacts() {
+            const searchTerm = document.getElementById('search-input').value.toLowerCase();
+            const container = document.getElementById('artifacts-container');
+            const cards = container.querySelectorAll('.artifact-card');
+            
+            cards.forEach((card, index) => {
+                const artifact = artifactsData[index];
+                if (artifact.name.toLowerCase().includes(searchTerm) || 
+                    artifact.description.toLowerCase().includes(searchTerm) ||
+                    artifact.period.toLowerCase().includes(searchTerm)) {
+                    card.style.display = 'block';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+            
+            showSection('artifacts');
+        }
+
+        // 获取类别名称
+        function getCategoryName(category) {
+            const categoryMap = {
+                'bronze': '青铜器',
+                'ceramic': '陶瓷',
+                'painting': '书画',
+                'jade': '玉器',
+                'gold': '金银器'
+            };
+            return categoryMap[category] || category;
+        }
+
+        // 3D场景相关变量
+        let scene, camera, renderer, controls, model;
+        let currentModelId = 'simuwuding';
+
+        // 初始化3D场景
+        function init3DScene() {
+            // 创建场景
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0xf5f5dc);
+            
+            // 创建相机
+            camera = new THREE.PerspectiveCamera(75, document.getElementById('3d-container').offsetWidth / document.getElementById('3d-container').offsetHeight, 0.1, 1000);
+            camera.position.z = 5;
+            
+            // 创建渲染器
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(document.getElementById('3d-container').offsetWidth, document.getElementById('3d-container').offsetHeight);
+            document.getElementById('3d-container').innerHTML = '';
+            document.getElementById('3d-container').appendChild(renderer.domElement);
+            
+            // 添加环境光
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+            scene.add(ambientLight);
+            
+            // 添加方向光
+            const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+            directionalLight.position.set(1, 1, 1);
+            scene.add(directionalLight);
+            
+            // 添加控制器
+            controls = new THREE.OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.05;
+            
+            // 加载默认模型
+            loadModel(currentModelId);
+            
+            // 动画循环
+            function animate() {
+                requestAnimationFrame(animate);
+                controls.update();
+                renderer.render(scene, camera);
+            }
+            animate();
+            
+            // 窗口大小调整
+            window.addEventListener('resize', () => {
+                camera.aspect = document.getElementById('3d-container').offsetWidth / document.getElementById('3d-container').offsetHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(document.getElementById('3d-container').offsetWidth, document.getElementById('3d-container').offsetHeight);
+            });
+        }
+
+        // 加载3D模型
+        function loadModel(modelId) {
+            // 移除现有模型
+            if (model) {
+                scene.remove(model);
+            }
+            
+            // 获取文物数据
+            const artifact = artifactsData.find(a => a.id === modelId);
+            if (!artifact) return;
+            
+            // 更新当前模型ID
+            currentModelId = modelId;
+            
+            // 更新3D鉴赏部分的信息
+            document.getElementById('3d-artifact-title').textContent = artifact.name;
+            document.getElementById('3d-artifact-description').textContent = artifact.description;
+            document.getElementById('3d-artifact-age').textContent = artifact.period;
+            document.getElementById('3d-artifact-location').textContent = artifact.location;
+            document.getElementById('3d-artifact-size').textContent = artifact.size;
+            document.getElementById('3d-artifact-museum').textContent = artifact.museum;
+            
+            // 创建简单的几何体作为模型占位符
+            let geometry;
+            switch (modelId) {
+                case 'simuwuding':
+                    geometry = new THREE.BoxGeometry(3, 2, 2);
+                    break;
+                case 'blueandwhite':
+                    geometry = new THREE.CylinderGeometry(1, 0.5, 3, 32);
+                    break;
+                case 'tangtricolor':
+                    geometry = new THREE.BoxGeometry(1.5, 2, 1);
+                    break;
+                case 'qianlijiangshan':
+                    geometry = new THREE.PlaneGeometry(4, 1.5);
+                    break;
+                case 'jade_dragon':
+                    geometry = new THREE.TorusGeometry(1, 0.2, 16, 100, Math.PI);
+                    break;
+                case 'gold_silver':
+                    geometry = new THREE.SphereGeometry(1.5, 32, 32);
+                    break;
+                default:
+                    geometry = new THREE.BoxGeometry(2, 2, 2);
+            }
+            
+            // 创建材质
+            const textureLoader = new THREE.TextureLoader();
+            const texture = textureLoader.load(artifact.image);
+            const material = new THREE.MeshStandardMaterial({ map: texture });
+            
+            // 创建模型
+            model = new THREE.Mesh(geometry, material);
+            scene.add(model);
+            
+            // 重置相机位置
+            camera.position.set(0, 0, 5);
+            controls.reset();
+        }
+
+        // 旋转文物模型
+        function rotateArtifact(direction) {
+            if (!model) return;
+            
+            if (direction === 'left') {
+                model.rotation.y -= Math.PI / 4;
+            } else if (direction === 'right') {
+                model.rotation.y += Math.PI / 4;
+            }
+        }
+
+        // 缩放文物模型
+        function zoomArtifact(direction) {
+            if (!camera) return;
+            
+            if (direction === 'in') {
+                camera.position.z = Math.max(camera.position.z - 0.5, 2);
+            } else if (direction === 'out') {
+                camera.position.z = Math.min(camera.position.z + 0.5, 10);
+            }
+        }
+
+        // 切换3D文物
+        function change3DArtifact(modelId) {
+            loadModel(modelId);
+        }
+
+        // 页面加载完成后初始化
+        document.addEventListener('DOMContentLoaded', () => {
+            showSection('home');
+        });
+    </script>
+</body>
+</html>

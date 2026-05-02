@@ -1,0 +1,1096 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=10">
+    <title>图片编辑器 - 专业级在线图片处理工具</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@470/css/font-awesome.min.css" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#3b82f6',
+                        secondary: '#6366f1',
+                        accent: '#8b5cf6',
+                        dark: '#1e293b',
+                        light: '#f8fafc'
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                    boxShadow: {
+                        'inner-lg': 'inset 0 2px 4px 0 rgba(0, 0, 0, 006)',
+                        'glass': '0 8px 32px rgba(31, 38, 135, 037)',
+                    },
+                    backdropBlur: {
+                        'glass': '4px',
+                    }
+                }
+            }
+        }
+    </script>
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .glass-effect {
+                @apply bg-white/20 backdrop-blur-glass border border-white/30 shadow-glass;
+            }
+            .btn-primary {
+                @apply bg-primary hover:bg-primary/90 text-white px-4 py-2 rounded-lg transition-all duration-300 transform hover:scale-105 hover:shadow-lg;
+            }
+            .btn-secondary {
+                @apply bg-secondary hover:bg-secondary/90 text-white px-4 py-2 rounded-lg transition-all duration-300 transform hover:scale-105 hover:shadow-lg;
+            }
+            .btn-outline {
+                @apply border border-primary text-primary hover:bg-primary hover:text-white px-4 py-2 rounded-lg transition-all duration-300;
+            }
+            .tool-btn {
+                @apply p-3 rounded-lg hover:bg-gray-100 transition-all duration-200 cursor-pointer text-gray-700 hover:text-primary;
+            }
+            .tool-btn.active {
+                @apply bg-primary text-white;
+            }
+            .slider-thumb {
+                @apply appearance-none w-4 h-4 rounded-full bg-primary cursor-pointer;
+            }
+            .slider-track {
+                @apply appearance-none h-2 rounded-lg bg-gray-200;
+            }
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen">
+    <!-- 顶部导航栏 -->
+    <nav class="glass-effect sticky top-0 z-50 px-6 py-4">
+        <div class="max-w-7xl mx-auto flex justify-between items-center">
+            <div class="flex items-center space-x-4">
+                <h1 class="text-2xl font-bold text-dark">
+                    <i class="fa fa-picture-o text-primary mr-2"></i>
+                    图片编辑器
+                </h1>
+            </div>
+            <div class="flex items-center space-x-4">
+                <button id="newImageBtn" class="btn-outline">
+                    <i class="fa fa-plus mr-2"></i>新建
+                </button>
+                <button id="uploadBtn" class="btn-primary">
+                    <i class="fa fa-upload mr-2"></i>上传图片
+                </button>
+                <input type="file" id="fileInput" accept="image/*" class="hidden">
+                <button id="saveBtn" class="btn-secondary" disabled>
+                    <i class="fa fa-download mr-2"></i>保存
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- 主要内容区域 -->
+    <div class="max-w-7xl mx-auto px-4 py-8">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            <!-- 左侧工具栏 -->
+            <div class="lg:col-span-2 glass-effect rounded-xl p-4">
+                <h3 class="text-lg font-semibold mb-4 text-center text-dark">编辑工具</h3>
+                <div class="space-y-2">
+                    <button class="tool-btn w-full flex items-center justify-center" data-tool="crop">
+                        <i class="fa fa-crop mr-2"></i>裁剪
+                    </button>
+                    <button class="tool-btn w-full flex items-center justify-center" data-tool="resize">
+                        <i class="fa fa-arrows-alt mr-2"></i>调整大小
+                    </button>
+                    <button class="tool-btn w-full flex items-center justify-center" data-tool="rotate">
+                        <i class="fa fa-rotate-right mr-2"></i>旋转
+                    </button>
+                    <button class="tool-btn w-full flex items-center justify-center" data-tool="flip">
+                        <i class="fa fa-refresh mr-2"></i>翻转
+                    </button>
+                    <button class="tool-btn w-full flex items-center justify-center" data-tool="filter">
+                        <i class="fa fa-magic mr-2"></i>滤镜
+                    </button>
+                    <button class="tool-btn w-full flex items-center justify-center" data-tool="text">
+                        <i class="fa fa-font mr-2"></i>添加文字
+                    </button>
+                    <button class="tool-btn w-full flex items-center justify-center" data-tool="draw">
+                        <i class="fa fa-pencil mr-2"></i>绘图
+                    </button>
+                    <button class="tool-btn w-full flex items-center justify-center" data-tool="undo">
+                        <i class="fa fa-undo mr-2"></i>撤销
+                    </button>
+                    <button class="tool-btn w-full flex items-center justify-center" data-tool="redo">
+                        <i class="fa fa-repeat mr-2"></i>重做
+                    </button>
+                </div>
+            </div>
+
+            <!-- 中间编辑区域 -->
+            <div class="lg:col-span-8">
+                <div class="glass-effect rounded-xl p-6">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-lg font-semibold text-dark">编辑区域</h3>
+                        <div class="text-sm text-gray-600" id="imageInfo">未选择图片</div>
+                    </div>
+                    <div class="relative bg-white rounded-lg overflow-hidden border-2 border-dashed border-gray-300" style="min-height: 500px;">
+                        <!-- 初始提示 -->
+                        <div id="initialPrompt" class="absolute inset-0 flex flex-col items-center justify-center text-center p-8">
+                            <i class="fa fa-cloud-upload text-6xl text-gray-400 mb-4"></i>
+                            <h4 class="text-xl font-semibold text-gray-600 mb-2">拖放图片到这里</h4>
+                            <p class="text-gray-500 mb-4">或点击上方的"上传图片"按钮</p>
+                            <p class="text-sm text-gray-400">支持 JPG、PNG、GIF、WEBP 格式</p>
+                        </div>
+                        
+                        <!-- 图片编辑区域 -->
+                        <div id="editorContainer" class="hidden relative w-full h-full">
+                            <canvas id="imageCanvas" class="max-w-full max-h-[500px] mx-auto"></canvas>
+                            
+                            <!-- 裁剪覆盖层 -->
+                            <div id="cropOverlay" class="hidden absolute inset-0 bg-black/50">
+                                <div id="cropArea" class="absolute border-2 border-white cursor-move">
+                                    <div class="absolute top-0 left-0 w-4 h-4 border-t-2 border-l-2 border-white -mt-1 -ml-1 cursor-nwse-resize"></div>
+                                    <div class="absolute top-0 right-0 w-4 h-4 border-t-2 border-r-2 border-white -mt-1 -mr-1 cursor-nesw-resize"></div>
+                                    <div class="absolute bottom-0 left-0 w-4 h-4 border-b-2 border-l-2 border-white -mb-1 -ml-1 cursor-nesw-resize"></div>
+                                    <div class="absolute bottom-0 right-0 w-4 h-4 border-b-2 border-r-2 border-white -mb-1 -mr-1 cursor-nwse-resize"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 右侧参数面板 -->
+            <div class="lg:col-span-2 glass-effect rounded-xl p-4">
+                <h3 class="text-lg font-semibold mb-4 text-center text-dark">参数设置</h3>
+                
+                <!-- 裁剪参数 -->
+                <div id="cropPanel" class="tool-panel hidden">
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">宽度 (px)</label>
+                            <input type="number" id="cropWidth" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">高度 (px)</label>
+                            <input type="number" id="cropHeight" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">X 坐标</label>
+                            <input type="number" id="cropX" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Y 坐标</label>
+                            <input type="number" id="cropY" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary">
+                        </div>
+                        <button id="applyCrop" class="btn-primary w-full">应用裁剪</button>
+                    </div>
+                </div>
+
+                <!-- 调整大小参数 -->
+                <div id="resizePanel" class="tool-panel hidden">
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">新宽度 (px)</label>
+                            <input type="number" id="resizeWidth" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">新高度 (px)</label>
+                            <input type="number" id="resizeHeight" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary">
+                        </div>
+                        <div class="flex items-center">
+                            <input type="checkbox" id="maintainAspectRatio" class="mr-2" checked>
+                            <label class="text-sm text-gray-700">保持宽高比</label>
+                        </div>
+                        <button id="applyResize" class="btn-primary w-full">应用调整</button>
+                    </div>
+                </div>
+
+                <!-- 旋转参数 -->
+                <div id="rotatePanel" class="tool-panel hidden">
+                    <div class="space-y-4">
+                        <button id="rotate90" class="btn-primary w-full mb-2">旋转 90°</button>
+                        <button id="rotate180" class="btn-primary w-full mb-2">旋转 180°</button>
+                        <button id="rotate270" class="btn-primary w-full">旋转 270°</button>
+                    </div>
+                </div>
+
+                <!-- 翻转参数 -->
+                <div id="flipPanel" class="tool-panel hidden">
+                    <div class="space-y-4">
+                        <button id="flipHorizontal" class="btn-primary w-full mb-2">水平翻转</button>
+                        <button id="flipVertical" class="btn-primary w-full">垂直翻转</button>
+                    </div>
+                </div>
+
+                <!-- 滤镜参数 -->
+                <div id="filterPanel" class="tool-panel hidden">
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">亮度</label>
+                            <input type="range" id="brightness" min="0" max="2" step="01" value="1" class="slider-track w-full">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">对比度</label>
+                            <input type="range" id="contrast" min="0" max="2" step="01" value="1" class="slider-track w-full">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">饱和度</label>
+                            <input type="range" id="saturation" min="0" max="2" step="01" value="1" class="slider-track w-full">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">灰度</label>
+                            <input type="range" id="grayscale" min="0" max="1" step="01" value="0" class="slider-track w-full">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">模糊</label>
+                            <input type="range" id="blur" min="0" max="10" step="01" value="0" class="slider-track w-full">
+                        </div>
+                        <button id="resetFilters" class="btn-outline w-full mb-2">重置滤镜</button>
+                        <button id="applyFilters" class="btn-primary w-full">应用滤镜</button>
+                    </div>
+                </div>
+
+                <!-- 添加文字参数 -->
+                <div id="textPanel" class="tool-panel hidden">
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">文字内容</label>
+                            <input type="text" id="textContent" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary" placeholder="输入文字...">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">字体大小</label>
+                            <input type="range" id="fontSize" min="12" max="72" value="24" class="slider-track w-full">
+                            <div class="text-center text-sm text-gray-600" id="fontSizeValue">24px</div>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">字体颜色</label>
+                            <input type="color" id="fontColor" value="#000000" class="w-full h-10 border border-gray-300 rounded-lg cursor-pointer">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">字体</label>
+                            <select id="fontFamily" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary">
+                                <option value="Arial">Arial</option>
+                                <option value="Verdana">Verdana</option>
+                                <option value="Helvetica">Helvetica</option>
+                                <option value="Times New Roman">Times New Roman</option>
+                                <option value="Courier New">Courier New</option>
+                                <option value="Georgia">Georgia</option>
+                            </select>
+                        </div>
+                        <button id="addText" class="btn-primary w-full">添加文字</button>
+                    </div>
+                </div>
+
+                <!-- 绘图参数 -->
+                <div id="drawPanel" class="tool-panel hidden">
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">画笔颜色</label>
+                            <input type="color" id="drawColor" value="#000000" class="w-full h-10 border border-gray-300 rounded-lg cursor-pointer">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">画笔大小</label>
+                            <input type="range" id="brushSize" min="1" max="20" value="5" class="slider-track w-full">
+                            <div class="text-center text-sm text-gray-600" id="brushSizeValue">5px</div>
+                        </div>
+                        <button id="clearCanvas" class="btn-outline w-full mb-2">清空画布</button>
+                        <button id="finishDrawing" class="btn-primary w-full">完成绘图</button>
+                    </div>
+                </div>
+
+                <!-- 默认提示 -->
+                <div id="defaultPanel" class="tool-panel">
+                    <div class="text-center py-8 text-gray-600">
+                        <i class="fa fa-sliders text-4xl mb-4"></i>
+                        <p>请选择一个编辑工具</p>
+                        <p class="text-sm mt-2">右侧将显示相应的参数设置</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 新建图片对话框 -->
+    <div id="newImageModal" class="fixed inset-0 bg-black/50 hidden items-center justify-center z-50">
+        <div class="bg-white rounded-xl p-6 max-w-md w-full mx-4">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-semibold">新建图片</h3>
+                <button id="closeNewImageModal" class="text-gray-500 hover:text-gray-700">
+                    <i class="fa fa-times"></i>
+                </button>
+            </div>
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">宽度 (px)</label>
+                    <input type="number" id="newImageWidth" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary" value="800">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">高度 (px)</label>
+                    <input type="number" id="newImageHeight" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary" value="600">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">背景颜色</label>
+                    <input type="color" id="newImageBgColor" value="#ffffff" class="w-full h-10 border border-gray-300 rounded-lg cursor-pointer">
+                </div>
+                <div class="flex space-x-3 pt-4">
+                    <button id="cancelNewImage" class="btn-outline flex-1">取消</button>
+                    <button id="createNewImage" class="btn-primary flex-1">创建</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        class ImageEditor {
+            constructor() {
+                this.canvas = document.getElementById('imageCanvas');
+                thisctx = this.canvas.getContext('2d');
+                thisoriginalImage = null;
+                this.currentImage = null;
+                this.history = [];
+                this.historyIndex = -1;
+                this.currentTool = null;
+                this.isDrawing = false;
+                this.drawStartX = 0;
+                this.drawStartY = 0;
+                this.cropStartX = 0;
+                this.cropStartY = 0;
+                this.isDraggingCrop = false;
+                this.isResizingCrop = false;
+                this.resizeDirection = '';
+                
+                this.initializeEventListeners();
+                this.initializeDragAndDrop();
+            }
+
+            initializeEventListeners() {
+                // 上传按钮
+                document.getElementById('uploadBtn').addEventListener('click', () => {
+                    document.getElementById('fileInput').click();
+                });
+
+                document.getElementById('fileInput').addEventListener('change', (e) => {
+                    if (e.target.files.length > 0) {
+                        this.loadImage(e.target.files[0]);
+                    }
+                });
+
+                // 保存按钮
+                document.getElementById('saveBtn').addEventListener('click', () => {
+                    this.saveImage();
+                });
+
+                // 新建图片
+                document.getElementById('newImageBtn').addEventListener('click', () => {
+                    document.getElementById('newImageModal').classList.remove('hidden');
+                    document.getElementById('newImageModal').classList.add('flex');
+                });
+
+                document.getElementById('closeNewImageModal').addEventListener('click', () => {
+                    this.closeNewImageModal();
+                });
+
+                document.getElementById('cancelNewImage').addEventListener('click', () => {
+                    this.closeNewImageModal();
+                });
+
+                document.getElementById('createNewImage').addEventListener('click', () => {
+                    this.createNewImage();
+                });
+
+                // 工具按钮
+                document.querySelectorAll('[data-tool]').forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        const tool = btn.getAttribute('data-tool');
+                        this.selectTool(tool);
+                    });
+                });
+
+                // 裁剪参数
+                document.getElementById('applyCrop').addEventListener('click', () => {
+                    this.applyCrop();
+                });
+
+                // 调整大小参数
+                document.getElementById('applyResize').addEventListener('click', () => {
+                    this.applyResize();
+                });
+
+                document.getElementById('resizeWidth').addEventListener('input', () => {
+                    if (document.getElementById('maintainAspectRatio').checked && this.currentImage) {
+                        const width = parseInt(document.getElementById('resizeWidth').value);
+                        const ratio = this.currentImage.height / this.currentImage.width;
+                        document.getElementById('resizeHeight').value = Math.round(width * ratio);
+                    }
+                });
+
+                // 旋转参数
+                document.getElementById('rotate90').addEventListener('click', () => {
+                    thisrotateImage(90);
+                });
+
+                document.getElementById('rotate180').addEventListener('click', () => {
+                    thisrotateImage(180);
+                });
+
+                document.getElementById('rotate270').addEventListener('click', () => {
+                    thisrotateImage(270);
+                });
+
+                // 翻转参数
+                document.getElementById('flipHorizontal').addEventListener('click', () => {
+                    this.flipImage('horizontal');
+                });
+
+                document.getElementById('flipVertical').addEventListener('click', () => {
+                    this.flipImage('vertical');
+                });
+
+                // 滤镜参数
+                ['brightness', 'contrast', 'saturation', 'grayscale', 'blur'].forEach(filter => {
+                    document.getElementById(filter).addEventListener('input', () => {
+                        this.previewFilter();
+                    });
+                });
+
+                document.getElementById('resetFilters').addEventListener('click', () => {
+                    this.resetFilters();
+                });
+
+                document.getElementById('applyFilters').addEventListener('click', () => {
+                    this.applyFilters();
+                });
+
+                // 文字参数
+                document.getElementById('fontSize').addEventListener('input', (e) => {
+                    document.getElementById('fontSizeValue').textContent = e.target.value + 'px';
+                });
+
+                document.getElementById('addText').addEventListener('click', () => {
+                    this.addText();
+                });
+
+                // 绘图参数
+                document.getElementById('brushSize').addEventListener('input', (e) => {
+                    document.getElementById('brushSizeValue').textContent = e.target.value + 'px';
+                });
+
+                document.getElementById('clearCanvas').addEventListener('click', () => {
+                    this.clearCanvas();
+                });
+
+                document.getElementById('finishDrawing').addEventListener('click', () => {
+                    this.finishDrawing();
+                });
+
+                // 画布事件
+                this.canvas.addEventListener('mousedown', (e) => {
+                    this.handleCanvasMouseDown(e);
+                });
+
+                this.canvas.addEventListener('mousemove', (e) => {
+                    this.handleCanvasMouseMove(e);
+                });
+
+                this.canvas.addEventListener('mouseup', (e) => {
+                    this.handleCanvasMouseUp(e);
+                });
+
+                this.canvas.addEventListener('mouseleave', (e) => {
+                    this.handleCanvasMouseUp(e);
+                });
+            }
+
+            initializeDragAndDrop() {
+                const container = document.querySelector('.relative.bg-white');
+                
+                container.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                    container.classList.add('border-primary');
+                });
+
+                container.addEventListener('dragleave', () => {
+                    container.classList.remove('border-primary');
+                });
+
+                container.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    container.classList.remove('border-primary');
+                    
+                    if (e.dataTransfer.files.length > 0 && e.dataTransfer.files[0].type.startsWith('image/')) {
+                        this.loadImage(e.dataTransfer.files[0]);
+                    }
+                });
+            }
+
+            loadImage(file) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const img = new Image();
+                    img.onload = () => {
+                        thisoriginalImage = img;
+                        this.currentImage = img;
+                        this.setupCanvas();
+                        this.drawImage();
+                        this.saveToHistory();
+                        this.updateImageInfo();
+                        document.getElementById('saveBtn').disabled = false;
+                        
+                        // 显示编辑区域
+                        document.getElementById('initialPrompt').classList.add('hidden');
+                        document.getElementById('editorContainer').classList.remove('hidden');
+                    };
+                    img.src = e.target.result;
+                };
+                reader.readAsDataURL(file);
+            }
+
+            setupCanvas() {
+                this.canvas.width = this.currentImage.width;
+                this.canvas.height = this.currentImage.height;
+            }
+
+            drawImage() {
+                thisctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+                thisctx.drawImage(this.currentImage, 0, 0);
+            }
+
+            saveToHistory() {
+                // 移除当前索引之后的历史记录
+                this.history = this.history.slice(0, this.historyIndex + 1);
+                
+                // 创建当前状态的副本
+                const canvasCopy = document.createElement('canvas');
+                canvasCopy.width = this.canvas.width;
+                canvasCopy.height = this.canvas.height;
+                const copyCtx = canvasCopy.getContext('2d');
+                copyCtx.drawImage(this.canvas, 0, 0);
+                
+                // 添加到历史记录
+                this.history.push(canvasCopy.toDataURL());
+                this.historyIndex = this.history.length - 1;
+            }
+
+            updateImageInfo() {
+                if (this.currentImage) {
+                    const size = this.getImageSize();
+                    document.getElementById('imageInfo').textContent = 
+                        `${this.canvas.width} × ${this.canvas.height} px | ${size}`;
+                }
+            }
+
+            getImageSize() {
+                const dataURL = this.canvas.toDataURL();
+                const base64 = dataURL.split(',')[1];
+                const sizeInBytes = Math.round((base64.length * 3) / 4);
+                
+                if (sizeInBytes < 1024) {
+                    return `${sizeInBytes} B`;
+                } else if (sizeInBytes < 1024 * 1024) {
+                    return `${(sizeInBytes / 1024).toFixed(1)} KB`;
+                } else {
+                    return `${(sizeInBytes / (1024 * 1024)).toFixed(1)} MB`;
+                }
+            }
+
+            saveImage() {
+                const link = document.createElement('a');
+                link.download = 'edited-image.png';
+                link.href = this.canvas.toDataURL('image/png');
+                link.click();
+            }
+
+            selectTool(tool) {
+                // 更新工具按钮状态
+                document.querySelectorAll('[data-tool]').forEach(btn => {
+                    btn.classList.remove('active');
+                });
+                document.querySelector(`[data-tool="${tool}"]`).classList.add('active');
+
+                // 隐藏所有工具面板
+                document.querySelectorAll('.tool-panel').forEach(panel => {
+                    panel.classList.add('hidden');
+                });
+
+                // 显示对应的工具面板
+                const panelId = tool + 'Panel';
+                const panel = document.getElementById(panelId);
+                if (panel) {
+                    panel.classList.remove('hidden');
+                } else {
+                    document.getElementById('defaultPanel').classList.remove('hidden');
+                }
+
+                this.currentTool = tool;
+
+                // 处理特定工具的初始化
+                switch (tool) {
+                    case 'crop':
+                        this.initializeCropTool();
+                        break;
+                    case 'resize':
+                        this.initializeResizeTool();
+                        break;
+                    case 'filter':
+                        this.initializeFilterTool();
+                        break;
+                    case 'draw':
+                        this.initializeDrawTool();
+                        break;
+                    case 'undo':
+                        thisundo();
+                        break;
+                    case 'redo':
+                        this.redo();
+                        break;
+                }
+            }
+
+            initializeCropTool() {
+                if (!this.currentImage) return;
+
+                // 设置初始裁剪参数
+                document.getElementById('cropWidth').value = this.canvas.width;
+                document.getElementById('cropHeight').value = this.canvas.height;
+                document.getElementById('cropX').value = 0;
+                document.getElementById('cropY').value = 0;
+
+                // 显示裁剪覆盖层
+                document.getElementById('cropOverlay').classList.remove('hidden');
+                
+                // 设置裁剪区域
+                const cropArea = document.getElementById('cropArea');
+                cropArea.style.left = '0px';
+                cropArea.style.top = '0px';
+                cropArea.style.width = this.canvas.width + 'px';
+                cropArea.style.height = this.canvas.height + 'px';
+            }
+
+            initializeResizeTool() {
+                if (!this.currentImage) return;
+
+                document.getElementById('resizeWidth').value = this.canvas.width;
+                document.getElementById('resizeHeight').value = this.canvas.height;
+            }
+
+            initializeFilterTool() {
+                // 重置滤镜参数
+                this.resetFilters();
+            }
+
+            initializeDrawTool() {
+                if (!this.currentImage) return;
+                
+                // 准备绘图模式
+                this.isDrawing = false;
+            }
+
+            applyCrop() {
+                const x = parseInt(document.getElementById('cropX').value) || 0;
+                const y = parseInt(document.getElementById('cropY').value) || 0;
+                const width = parseInt(document.getElementById('cropWidth').value) || this.canvas.width;
+                const height = parseInt(document.getElementById('cropHeight').value) || this.canvas.height;
+
+                // 创建新画布
+                const tempCanvas = document.createElement('canvas');
+                tempCanvas.width = width;
+                tempCanvas.height = height;
+                const tempCtx = tempCanvas.getContext('2d');
+
+                // 裁剪图像
+                tempCtx.drawImage(
+                    this.canvas,
+                    x, y, width, height,
+                    0, 0, width, height
+                );
+
+                // 更新当前图像
+                const img = new Image();
+                img.onload = () => {
+                    this.currentImage = img;
+                    this.canvas.width = width;
+                    this.canvas.height = height;
+                    this.drawImage();
+                    this.saveToHistory();
+                    this.updateImageInfo();
+                    
+                    // 隐藏裁剪覆盖层
+                    document.getElementById('cropOverlay').classList.add('hidden');
+                };
+                img.src = tempCanvas.toDataURL();
+            }
+
+            applyResize() {
+                const width = parseInt(document.getElementById('resizeWidth').value) || this.canvas.width;
+                const height = parseInt(document.getElementById('resizeHeight').value) || this.canvas.height;
+
+                // 创建新画布
+                const tempCanvas = document.createElement('canvas');
+                tempCanvas.width = width;
+                tempCanvas.height = height;
+                const tempCtx = tempCanvas.getContext('2d');
+
+                // 调整大小
+                tempCtx.drawImage(this.canvas, 0, 0, width, height);
+
+                // 更新当前图像
+                const img = new Image();
+                img.onload = () => {
+                    this.currentImage = img;
+                    this.canvas.width = width;
+                    this.canvas.height = height;
+                    this.drawImage();
+                    this.saveToHistory();
+                    this.updateImageInfo();
+                };
+                img.src = tempCanvas.toDataURL();
+            }
+
+            rotateImage(degrees) {
+                const tempCanvas = document.createElement('canvas');
+                let tempCtx = tempCanvas.getContext('2d');
+
+                // 根据旋转角度调整画布大小
+                if (degrees === 90 || degrees === 270) {
+                    tempCanvas.width = this.canvas.height;
+                    tempCanvas.height = this.canvas.width;
+                } else {
+                    tempCanvas.width = this.canvas.width;
+                    tempCanvas.height = this.canvas.height;
+                }
+
+                // 执行旋转
+                tempCtx.save();
+                tempCtx.translate(tempCanvas.width / 2, tempCanvas.height / 2);
+                tempCtxrotate(degrees * Math.PI / 180);
+                tempCtx.drawImage(this.canvas, -this.canvas.width / 2, -this.canvas.height / 2);
+                tempCtx.restore();
+
+                // 更新当前图像
+                const img = new Image();
+                img.onload = () => {
+                    this.currentImage = img;
+                    this.canvas.width = tempCanvas.width;
+                    this.canvas.height = tempCanvas.height;
+                    this.drawImage();
+                    this.saveToHistory();
+                    this.updateImageInfo();
+                };
+                img.src = tempCanvas.toDataURL();
+            }
+
+            flipImage(direction) {
+                const tempCanvas = document.createElement('canvas');
+                tempCanvas.width = this.canvas.width;
+                tempCanvas.height = this.canvas.height;
+                const tempCtx = tempCanvas.getContext('2d');
+
+                // 执行翻转
+                tempCtx.save();
+                if (direction === 'horizontal') {
+                    tempCtx.translate(this.canvas.width, 0);
+                    tempCtx.scale(-1, 1);
+                } else {
+                    tempCtx.translate(0, this.canvas.height);
+                    tempCtx.scale(1, -1);
+                }
+                tempCtx.drawImage(this.canvas, 0, 0);
+                tempCtx.restore();
+
+                // 更新当前图像
+                const img = new Image();
+                img.onload = () => {
+                    this.currentImage = img;
+                    this.drawImage();
+                    this.saveToHistory();
+                    this.updateImageInfo();
+                };
+                img.src = tempCanvas.toDataURL();
+            }
+
+            previewFilter() {
+                if (!thisoriginalImage) return;
+
+                const brightness = document.getElementById('brightness').value;
+                const contrast = document.getElementById('contrast').value;
+                const saturation = document.getElementById('saturation').value;
+                const grayscale = document.getElementById('grayscale').value;
+                const blur = document.getElementById('blur').value;
+
+                // 应用滤镜
+                thisctx.filter = `
+                    brightness(${brightness})
+                    contrast(${contrast})
+                    saturate(${saturation})
+                    grayscale(${grayscale})
+                    blur(${blur}px)
+                `;
+
+                thisctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+                thisctx.drawImage(thisoriginalImage, 0, 0);
+
+                // 重置滤镜，以便后续绘制
+                thisctx.filter = 'none';
+            }
+
+            resetFilters() {
+                document.getElementById('brightness').value = 1;
+                document.getElementById('contrast').value = 1;
+                document.getElementById('saturation').value = 1;
+                document.getElementById('grayscale').value = 0;
+                document.getElementById('blur').value = 0;
+
+                if (this.currentImage) {
+                    this.drawImage();
+                }
+            }
+
+            applyFilters() {
+                this.saveToHistory();
+            }
+
+            addText() {
+                const text = document.getElementById('textContent').value;
+                const fontSize = document.getElementById('fontSize').value + 'px';
+                const fontColor = document.getElementById('fontColor').value;
+                const fontFamily = document.getElementById('fontFamily').value;
+
+                if (!text) return;
+
+                // 设置文字样式
+                thisctx.font = `${fontSize} ${fontFamily}`;
+                thisctx.fillStyle = fontColor;
+                thisctx.textAlign = 'center';
+                thisctx.textBaseline = 'middle';
+
+                // 添加文字到画布中心
+                thisctx.fillText(text, this.canvas.width / 2, this.canvas.height / 2);
+
+                // 更新当前图像
+                const img = new Image();
+                img.onload = () => {
+                    this.currentImage = img;
+                    this.saveToHistory();
+                };
+                img.src = this.canvas.toDataURL();
+            }
+
+            clearCanvas() {
+                if (confirm('确定要清空画布吗？')) {
+                    thisctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+                    thisctx.drawImage(this.currentImage, 0, 0);
+                }
+            }
+
+            finishDrawing() {
+                // 保存绘图结果
+                const img = new Image();
+                img.onload = () => {
+                    this.currentImage = img;
+                    this.saveToHistory();
+                };
+                img.src = this.canvas.toDataURL();
+
+                // 退出绘图模式
+                this.isDrawing = false;
+            }
+
+            handleCanvasMouseDown(e) {
+                if (this.currentTool === 'draw') {
+                    this.isDrawing = true;
+                    const rect = this.canvas.getBoundingClientRect();
+                    this.drawStartX = e.clientX - rect.left;
+                    this.drawStartY = e.clientY - rect.top;
+                } else if (this.currentTool === 'crop') {
+                    const cropArea = document.getElementById('cropArea');
+                    const rect = cropArea.getBoundingClientRect();
+                    const mouseX = e.clientX - rect.left;
+                    const mouseY = e.clientY - rect.top;
+
+                    // 检查是否点击了调整大小的手柄
+                    if (mouseX < 10 && mouseY < 10) {
+                        this.isResizingCrop = true;
+                        this.resizeDirection = 'nw';
+                    } else if (mouseX > rect.width - 10 && mouseY < 10) {
+                        this.isResizingCrop = true;
+                        this.resizeDirection = 'ne';
+                    } else if (mouseX < 10 && mouseY > rect.height - 10) {
+                        this.isResizingCrop = true;
+                        this.resizeDirection = 'sw';
+                    } else if (mouseX > rect.width - 10 && mouseY > rect.height - 10) {
+                        this.isResizingCrop = true;
+                        this.resizeDirection = 'se';
+                    } else {
+                        // 开始拖动裁剪区域
+                        this.isDraggingCrop = true;
+                        this.cropStartX = e.clientX - rect.left;
+                        this.cropStartY = e.clientY - rect.top;
+                    }
+                }
+            }
+
+            handleCanvasMouseMove(e) {
+                if (this.currentTool === 'draw' && this.isDrawing) {
+                    const rect = this.canvas.getBoundingClientRect();
+                    const x = e.clientX - rect.left;
+                    const y = e.clientY - rect.top;
+
+                    // 绘制线条
+                    thisctx.beginPath();
+                    thisctx.moveTo(this.drawStartX, this.drawStartY);
+                    thisctx.lineTo(x, y);
+                    thisctx.strokeStyle = document.getElementById('drawColor').value;
+                    thisctx.lineWidth = document.getElementById('brushSize').value;
+                    thisctx.lineCap = 'round';
+                    thisctx.lineJoin = 'round';
+                    thisctx.stroke();
+
+                    this.drawStartX = x;
+                    this.drawStartY = y;
+                } else if (this.currentTool === 'crop') {
+                    const cropArea = document.getElementById('cropArea');
+                    const canvasRect = this.canvas.getBoundingClientRect();
+                    
+                    if (this.isDraggingCrop) {
+                        const newLeft = e.clientX - canvasRect.left - this.cropStartX;
+                        const newTop = e.clientY - canvasRect.top - this.cropStartY;
+                        
+                        // 限制在画布范围内
+                        const maxLeft = this.canvas.width - parseInt(cropArea.style.width);
+                        const maxTop = this.canvas.height - parseInt(cropArea.style.height);
+                        
+                        cropArea.style.left = Math.max(0, Math.min(newLeft, maxLeft)) + 'px';
+                        cropArea.style.top = Math.max(0, Math.min(newTop, maxTop)) + 'px';
+                        
+                        // 更新参数
+                        document.getElementById('cropX').value = parseInt(cropArea.style.left);
+                        document.getElementById('cropY').value = parseInt(cropArea.style.top);
+                    } else if (this.isResizingCrop) {
+                        const currentLeft = parseInt(cropArea.style.left);
+                        const currentTop = parseInt(cropArea.style.top);
+                        const currentWidth = parseInt(cropArea.style.width);
+                        const currentHeight = parseInt(cropArea.style.height);
+                        
+                        const deltaX = e.clientX - canvasRect.left - (currentLeft + currentWidth);
+                        const deltaY = e.clientY - canvasRect.top - (currentTop + currentHeight);
+                        
+                        let newWidth = currentWidth;
+                        let newHeight = currentHeight;
+                        let newLeft = currentLeft;
+                        let newTop = currentTop;
+                        
+                        switch (this.resizeDirection) {
+                            case 'se':
+                                newWidth = Math.max(20, currentWidth + deltaX);
+                                newHeight = Math.max(20, currentHeight + deltaY);
+                                break;
+                            case 'ne':
+                                newWidth = Math.max(20, currentWidth + deltaX);
+                                newHeight = Math.max(20, currentHeight + deltaY);
+                                newTop = currentTop + (currentHeight - newHeight);
+                                break;
+                            case 'sw':
+                                newWidth = Math.max(20, currentWidth + deltaX);
+                                newHeight = Math.max(20, currentHeight + deltaY);
+                                newLeft = currentLeft + (currentWidth - newWidth);
+                                break;
+                            case 'nw':
+                                newWidth = Math.max(20, currentWidth + deltaX);
+                                newHeight = Math.max(20, currentHeight + deltaY);
+                                newLeft = currentLeft + (currentWidth - newWidth);
+                                newTop = currentTop + (currentHeight - newHeight);
+                                break;
+                        }
+                        
+                        // 限制在画布范围内
+                        newLeft = Math.max(0, newLeft);
+                        newTop = Math.max(0, newTop);
+                        newWidth = Math.min(newWidth, this.canvas.width - newLeft);
+                        newHeight = Math.min(newHeight, this.canvas.height - newTop);
+                        
+                        cropArea.style.left = newLeft + 'px';
+                        cropArea.style.top = newTop + 'px';
+                        cropArea.style.width = newWidth + 'px';
+                        cropArea.style.height = newHeight + 'px';
+                        
+                        // 更新参数
+                        document.getElementById('cropX').value = newLeft;
+                        document.getElementById('cropY').value = newTop;
+                        document.getElementById('cropWidth').value = newWidth;
+                        document.getElementById('cropHeight').value = newHeight;
+                    }
+                }
+            }
+
+            handleCanvasMouseUp(e) {
+                this.isDrawing = false;
+                this.isDraggingCrop = false;
+                this.isResizingCrop = false;
+            }
+
+            undo() {
+                if (this.historyIndex > 0) {
+                    this.historyIndex--;
+                    this.loadFromHistory();
+                }
+            }
+
+            redo() {
+                if (this.historyIndex < this.history.length - 1) {
+                    this.historyIndex++;
+                    this.loadFromHistory();
+                }
+            }
+
+            loadFromHistory() {
+                const img = new Image();
+                img.onload = () => {
+                    this.currentImage = img;
+                    this.canvas.width = img.width;
+                    this.canvas.height = img.height;
+                    this.drawImage();
+                    this.updateImageInfo();
+                };
+                img.src = this.history[this.historyIndex];
+            }
+
+            closeNewImageModal() {
+                document.getElementById('newImageModal').classList.add('hidden');
+                document.getElementById('newImageModal').classList.remove('flex');
+            }
+
+            createNewImage() {
+                const width = parseInt(document.getElementById('newImageWidth').value) || 800;
+                const height = parseInt(document.getElementById('newImageHeight').value) || 600;
+                const bgColor = document.getElementById('newImageBgColor').value;
+
+                // 创建新画布
+                this.canvas.width = width;
+                this.canvas.height = height;
+                thisctx.fillStyle = bgColor;
+                thisctx.fillRect(0, 0, width, height);
+
+                // 更新当前图像
+                const img = new Image();
+                img.onload = () => {
+                    this.currentImage = img;
+                    thisoriginalImage = img;
+                    this.saveToHistory();
+                    this.updateImageInfo();
+                    document.getElementById('saveBtn').disabled = false;
+                    
+                    // 显示编辑区域
+                    document.getElementById('initialPrompt').classList.add('hidden');
+                    document.getElementById('editorContainer').classList.remove('hidden');
+                    
+                    // 关闭对话框
+                    this.closeNewImageModal();
+                };
+                img.src = this.canvas.toDataURL();
+            }
+        }
+
+        // 初始化图片编辑器
+        document.addEventListener('DOMContentLoaded', () => {
+            const editor = new ImageEditor();
+        });
+    </script>
+</body>
+</html>

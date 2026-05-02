@@ -1,0 +1,1284 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI助手 Pro - 智能对话助手</title>
+    <!-- Tailwind CSS v3 -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome -->
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <!-- GSAP 动画库 -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <!-- AOS 滚动动画库 -->
+    <link href="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.js"></script>
+    <!-- 统一的 Tailwind 配置 -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#3b82f6',
+                        secondary: '#60a5fa',
+                        accent: '#8b5cf6',
+                        success: '#10b981',
+                        warning: '#f59e0b',
+                        error: '#ef4444',
+                        dark: {
+                            primary: '#1e40af',
+                            secondary: '#3b82f6',
+                            accent: '#7c3aed',
+                            bg: '#0f172a',
+                            card: '#1e293b',
+                            'card-hover': '#334155'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                    animation: {
+                        'typing': 'typing 1.5s steps(40, end)',
+                        'blink': 'blink .75s step-end infinite',
+                        'fade-in': 'fadeIn 0.3s ease-in-out',
+                        'slide-up': 'slideUp 0.3s ease-out',
+                        'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                        'bounce-slow': 'bounce 2s infinite',
+                    },
+                    keyframes: {
+                        typing: {
+                            'from': { width: '0' },
+                            'to': { width: '100%' }
+                        },
+                        blink: {
+                            'from, to': { borderColor: 'transparent' },
+                            '50%': { borderColor: 'currentColor' }
+                        },
+                        fadeIn: {
+                            '0%': { opacity: '0' },
+                            '100%': { opacity: '1' }
+                        },
+                        slideUp: {
+                            '0%': { transform: 'translateY(10px)', opacity: '0' },
+                            '100%': { transform: 'translateY(0)', opacity: '1' }
+                        }
+                    },
+                    boxShadow: {
+                        'glass': '0 8px 32px 0 rgba(31, 38, 135, 0.37)',
+                        'glass-dark': '0 8px 32px 0 rgba(0, 0, 0, 0.37)',
+                        'card': '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
+                        'card-hover': '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
+                    },
+                    backgroundImage: {
+                        'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
+                        'gradient-conic': 'conic-gradient(from 180deg at 50% 50%, var(--tw-gradient-stops))',
+                    }
+                }
+            },
+            darkMode: 'class'
+        }
+    </script>
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .content-auto {
+                content-visibility: auto;
+            }
+            .scrollbar-hide::-webkit-scrollbar {
+                display: none;
+            }
+            .scrollbar-hide {
+                -ms-overflow-style: none;
+                scrollbar-width: none;
+            }
+            .scrollbar-thin::-webkit-scrollbar {
+                width: 4px;
+                height: 4px;
+            }
+            .scrollbar-thin::-webkit-scrollbar-track {
+                background: transparent;
+            }
+            .scrollbar-thin::-webkit-scrollbar-thumb {
+                background-color: rgba(156, 163, 175, 0.5);
+                border-radius: 20px;
+            }
+            .scrollbar-thin-dark::-webkit-scrollbar-thumb {
+                background-color: rgba(107, 114, 128, 0.5);
+            }
+            .typing-indicator {
+                display: inline-flex;
+                align-items: center;
+            }
+            .typing-indicator span {
+                height: 8px;
+                width: 8px;
+                margin: 0 1px;
+                background-color: currentColor;
+                border-radius: 50%;
+                display: inline-block;
+                animation: typing-bounce 1.4s infinite ease-in-out both;
+            }
+            .typing-indicator span:nth-child(1) {
+                animation-delay: -0.32s;
+            }
+            .typing-indicator span:nth-child(2) {
+                animation-delay: -0.16s;
+            }
+            @keyframes typing-bounce {
+                0%, 80%, 100% { transform: scale(0); }
+                40% { transform: scale(1); }
+            }
+            .message-bubble {
+                @apply relative max-w-[80%] px-4 py-2 rounded-2xl animate-fade-in;
+            }
+            .user-message {
+                @apply bg-primary text-white rounded-tr-none shadow-md;
+            }
+            .ai-message {
+                @apply bg-gray-100 text-gray-800 rounded-tl-none dark:bg-dark-card dark:text-gray-200 shadow-md;
+            }
+            .message-time {
+                @apply text-xs text-gray-400 mt-1;
+            }
+            .glass-effect {
+                @apply bg-white bg-opacity-80 backdrop-blur-md dark:bg-dark-card dark:bg-opacity-80;
+            }
+            .glass-effect-light {
+                @apply bg-white bg-opacity-60 backdrop-blur-sm dark:bg-dark-card dark:bg-opacity-60;
+            }
+            .glass-effect-strong {
+                @apply bg-white bg-opacity-90 backdrop-blur-lg dark:bg-dark-card dark:bg-opacity-90;
+            }
+            .text-shadow {
+                text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            }
+            .text-gradient {
+                @apply bg-clip-text text-transparent bg-gradient-to-r from-primary to-accent;
+            }
+            .bg-glass {
+                @apply bg-white bg-opacity-20 backdrop-blur-lg border border-white border-opacity-20 shadow-glass dark:border-dark-card dark:border-opacity-20 dark:shadow-glass-dark;
+            }
+            .transition-all-300 {
+                @apply transition-all duration-300 ease-in-out;
+            }
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-blue-50 to-indigo-50 min-h-screen flex flex-col transition-colors duration-300 dark:from-dark-bg dark:to-gray-900 dark:text-white">
+    <!-- 顶部导航栏 -->
+    <header class="glass-effect-strong sticky top-0 z-50 border-b border-gray-200 dark:border-gray-700 shadow-sm">
+        <div class="container mx-auto px-4 py-3 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="relative">
+                    <img src="https://p26-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/rc/pc/super_tool/c05bf396ae204aaa8eaed550f6b69a19~tplv-a9rns2rl98-image.image?lk3s=8e244e95&rcl=202604181052504E0683AAB58BB1983DD8&rrcfp=f06b921b&x-expires=1779072785&x-signature=1lMyMPGKltIOt2mVuftFpoAguZA%3D" 
+                         alt="AI助手 Pro" 
+                         class="h-10 w-10 rounded-full object-cover border-2 border-white dark:border-dark-card shadow-md">
+                    <span class="absolute -top-1 -right-1 bg-accent text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-bold">Pro</span>
+                </div>
+                <div>
+                    <h1 class="text-xl font-bold text-gradient">AI助手 Pro</h1>
+                    <p class="text-xs text-gray-500 dark:text-gray-400">v2.0.0</p>
+                </div>
+            </div>
+            <div class="flex items-center space-x-2">
+                <button id="help-button" class="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors relative" title="帮助">
+                    <i class="fa fa-question-circle-o" aria-hidden="true"></i>
+                </button>
+                <button id="settings-button" class="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors relative" title="设置">
+                    <i class="fa fa-cog" aria-hidden="true"></i>
+                </button>
+                <button id="theme-toggle" class="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors relative" title="切换主题">
+                    <i class="fa fa-moon-o dark:hidden" aria-hidden="true"></i>
+                    <i class="fa fa-sun-o hidden dark:block text-yellow-400" aria-hidden="true"></i>
+                </button>
+                <button id="clear-chat" class="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors relative" title="清空聊天">
+                    <i class="fa fa-trash-o" aria-hidden="true"></i>
+                </button>
+                <div class="h-6 border-r border-gray-300 dark:border-gray-600 mx-1"></div>
+                <div class="flex items-center space-x-1">
+                    <div class="w-8 h-8 rounded-full bg-gradient-to-r from-primary to-accent flex items-center justify-center text-white font-bold">
+                        U
+                    </div>
+                    <span class="hidden md:inline text-sm font-medium">用户</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- 主要内容区域 -->
+    <main class="flex-grow flex flex-col md:flex-row">
+        <!-- 左侧聊天目录 -->
+        <aside class="w-full md:w-80 bg-white dark:bg-dark-card border-b md:border-b-0 md:border-r border-gray-200 dark:border-gray-700 flex flex-col shadow-lg z-10">
+            <!-- 聊天目录标题 -->
+            <div class="p-4 border-b border-gray-200 dark:border-gray-700 glass-effect-light">
+                <div class="flex items-center justify-between">
+                    <h2 class="text-lg font-bold text-gradient">聊天记录</h2>
+                    <button id="new-chat-btn" class="p-2 text-primary hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-full transition-all-300 transform hover:scale-110">
+                        <i class="fa fa-plus" aria-hidden="true"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <!-- 搜索框 -->
+            <div class="p-3 border-b border-gray-200 dark:border-gray-700">
+                <div class="relative">
+                    <input type="text" 
+                           id="search-chats" 
+                           placeholder="搜索聊天..." 
+                           class="w-full pl-9 pr-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-white transition-all">
+                    <i class="fa fa-search absolute left-3 top-3 text-gray-400" aria-hidden="true"></i>
+                </div>
+            </div>
+            
+            <!-- 聊天列表 -->
+            <div id="chat-list" class="flex-grow overflow-y-auto p-2 scrollbar-thin scrollbar-thin-dark">
+                <div class="chat-item active p-3 mb-2 rounded-lg bg-blue-50 dark:bg-blue-900/30 cursor-pointer hover:bg-blue-100 dark:hover:bg-blue-800/50 transition-all-300 transform hover:scale-[1.02] shadow-sm" data-aos="fade-up" data-aos-duration="300">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center">
+                            <div class="w-8 h-8 rounded-full bg-gradient-to-r from-primary to-secondary flex items-center justify-center text-white mr-2">
+                                <i class="fa fa-comment-o" aria-hidden="true"></i>
+                            </div>
+                            <span class="font-medium truncate">新对话</span>
+                        </div>
+                        <span class="text-xs text-gray-400">刚刚</span>
+                    </div>
+                    <p class="text-sm text-gray-500 dark:text-gray-400 truncate mt-1">HELLO！我是AI助手 Pro，很高兴为你服务...</p>
+                    <div class="flex items-center justify-between mt-2">
+                        <span class="text-xs px-2 py-0.5 rounded-full bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400">活跃</span>
+                        <button class="text-gray-400 hover:text-red-500 transition-colors delete-chat-btn" title="删除对话">
+                            <i class="fa fa-times" aria-hidden="true"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 快捷功能区 -->
+            <div class="p-4 border-t border-gray-200 dark:border-gray-700 glass-effect-light">
+                <h3 class="font-semibold mb-3 text-gray-700 dark:text-gray-300 flex items-center">
+                    <i class="fa fa-bolt text-warning mr-2" aria-hidden="true"></i>
+                    快捷功能
+                </h3>
+                <div class="grid grid-cols-2 gap-2">
+                    <button class="quick-action-btn flex flex-col items-center justify-center p-3 rounded-lg bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 transition-all-300 transform hover:scale-105" title="创建新文档">
+                        <i class="fa fa-file-text-o text-primary text-xl mb-1" aria-hidden="true"></i>
+                        <span class="text-xs">文档</span>
+                    </button>
+                    <button class="quick-action-btn flex flex-col items-center justify-center p-3 rounded-lg bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 transition-all-300 transform hover:scale-105" title="生成图片">
+                        <i class="fa fa-picture-o text-accent text-xl mb-1" aria-hidden="true"></i>
+                        <span class="text-xs">图片</span>
+                    </button>
+                    <button class="quick-action-btn flex flex-col items-center justify-center p-3 rounded-lg bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 transition-all-300 transform hover:scale-105" title="语音输入">
+                        <i class="fa fa-microphone text-warning text-xl mb-1" aria-hidden="true"></i>
+                        <span class="text-xs">语音</span>
+                    </button>
+                    <button class="quick-action-btn flex flex-col items-center justify-center p-3 rounded-lg bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 transition-all-300 transform hover:scale-105" title="设置">
+                        <i class="fa fa-sliders text-gray-600 dark:text-gray-400 text-xl mb-1" aria-hidden="true"></i>
+                        <span class="text-xs">设置</span>
+                    </button>
+                </div>
+            </div>
+            
+            <!-- 热门话题 -->
+            <div class="p-4 border-t border-gray-200 dark:border-gray-700">
+                <h3 class="font-semibold mb-2 text-gray-700 dark:text-gray-300 flex items-center">
+                    <i class="fa fa-fire text-error mr-2" aria-hidden="true"></i>
+                    热门话题
+                </h3>
+                <div class="space-y-2">
+                    <button class="topic-btn w-full text-left px-3 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 transition-all-300 transform hover:translate-x-1">
+                        <i class="fa fa-robot mr-2 text-primary" aria-hidden="true"></i>
+                        什么是人工智能？
+                    </button>
+                    <button class="topic-btn w-full text-left px-3 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 transition-all-300 transform hover:translate-x-1">
+                        <i class="fa fa-code mr-2 text-accent" aria-hidden="true"></i>
+                        如何学习编程？
+                    </button>
+                    <button class="topic-btn w-full text-left px-3 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 transition-all-300 transform hover:translate-x-1">
+                        <i class="fa fa-cloud mr-2 text-secondary" aria-hidden="true"></i>
+                        今天天气怎么样？
+                    </button>
+                </div>
+            </div>
+        </aside>
+
+        <!-- 右侧对话区域 -->
+        <section class="flex-grow flex flex-col relative">
+            <!-- 对话消息容器 -->
+            <div id="chat-container" class="flex-grow overflow-y-auto p-4 space-y-6 scrollbar-thin scrollbar-thin-dark">
+                <!-- 欢迎横幅 -->
+                <div class="bg-glass rounded-xl p-4 mb-6 text-center" data-aos="fade-up" data-aos-duration="500">
+                    <div class="flex justify-center mb-3">
+                        <img src="https://p26-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/rc/pc/super_tool/c05bf396ae204aaa8eaed550f6b69a19~tplv-a9rns2rl98-image.image?lk3s=8e244e95&rcl=202604181052504E0683AAB58BB1983DD8&rrcfp=f06b921b&x-expires=1779072785&x-signature=1lMyMPGKltIOt2mVuftFpoAguZA%3D" 
+                             alt="AI助手 Pro" 
+                             class="h-16 w-16 rounded-full object-cover border-4 border-white dark:border-dark-card shadow-lg">
+                    </div>
+                    <h2 class="text-2xl font-bold text-gradient mb-2">欢迎使用 AI助手 Pro v2.0</h2>
+                    <p class="text-gray-600 dark:text-gray-300 mb-4">全新升级，更智能、更强大、更易用</p>
+                    <div class="flex flex-wrap justify-center gap-2">
+                        <span class="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-medium dark:bg-blue-900/30 dark:text-blue-400">智能对话</span>
+                        <span class="px-3 py-1 bg-purple-100 text-purple-800 rounded-full text-xs font-medium dark:bg-purple-900/30 dark:text-purple-400">多模态生成</span>
+                        <span class="px-3 py-1 bg-green-100 text-green-800 rounded-full text-xs font-medium dark:bg-green-900/30 dark:text-green-400">实时翻译</span>
+                        <span class="px-3 py-1 bg-yellow-100 text-yellow-800 rounded-full text-xs font-medium dark:bg-yellow-900/30 dark:text-yellow-400">语音输入</span>
+                    </div>
+                </div>
+                
+                <!-- AI欢迎消息 -->
+                <div class="flex items-start mb-4 animate-slide-up" data-aos="fade-up" data-aos-duration="300">
+                    <div class="relative">
+                        <img src="https://p26-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/rc/pc/super_tool/c05bf396ae204aaa8eaed550f6b69a19~tplv-a9rns2rl98-image.image?lk3s=8e244e95&rcl=202604181052504E0683AAB58BB1983DD8&rrcfp=f06b921b&x-expires=1779072785&x-signature=1lMyMPGKltIOt2mVuftFpoAguZA%3D" 
+                             alt="AI助手 Pro" 
+                             class="h-10 w-10 rounded-full mr-2 flex-shrink-0 border-2 border-white dark:border-dark-card shadow-md">
+                        <span class="absolute -top-1 -right-1 bg-accent text-white text-xs rounded-full h-4 w-4 flex items-center justify-center font-bold">Pro</span>
+                    </div>
+                    <div class="message-bubble ai-message">
+                        <div class="flex items-center mb-1">
+                            <span class="font-semibold text-primary dark:text-secondary mr-2">AI助手 Pro</span>
+                            <span class="inline-block w-2 h-2 bg-green-500 rounded-full animate-pulse" title="在线"></span>
+                        </div>
+                        <p>HELLO！我是AI助手 Pro，很高兴为你服务。我已经升级到了全新版本，现在可以为你提供更智能的对话体验、多模态内容生成、实时翻译等功能。你可以问我任何问题，我会尽力提供帮助！</p>
+                        <div class="flex flex-wrap gap-2 mt-2">
+                            <button class="text-xs px-2 py-1 bg-blue-50 text-blue-600 rounded-full hover:bg-blue-100 transition-colors dark:bg-blue-900/20 dark:text-blue-400 dark:hover:bg-blue-900/40">
+                                <i class="fa fa-star mr-1" aria-hidden="true"></i>新功能介绍
+                            </button>
+                            <button class="text-xs px-2 py-1 bg-purple-50 text-purple-600 rounded-full hover:bg-purple-100 transition-colors dark:bg-purple-900/20 dark:text-purple-400 dark:hover:bg-purple-900/40">
+                                <i class="fa fa-lightbulb-o mr-1" aria-hidden="true"></i>使用技巧
+                            </button>
+                        </div>
+                        <span class="message-time">刚刚</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 输入区域 -->
+            <div class="p-4 border-t border-gray-200 dark:border-gray-700 glass-effect-strong shadow-lg">
+                <!-- 附件工具栏 -->
+                <div class="flex items-center mb-2">
+                    <div class="flex items-center space-x-1">
+                        <button id="attach-file-btn" class="p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors" title="上传文件">
+                            <i class="fa fa-paperclip text-gray-500" aria-hidden="true"></i>
+                        </button>
+                        <button id="voice-input-btn" class="p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors" title="语音输入">
+                            <i class="fa fa-microphone text-gray-500" aria-hidden="true"></i>
+                        </button>
+                        <button id="emoji-btn" class="p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors" title="表情">
+                            <i class="fa fa-smile-o text-gray-500" aria-hidden="true"></i>
+                        </button>
+                        <button id="settings-btn" class="p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors" title="输入设置">
+                            <i class="fa fa-cog text-gray-500" aria-hidden="true"></i>
+                        </button>
+                    </div>
+                    <div class="ml-auto flex items-center">
+                        <div class="text-xs text-gray-500 dark:text-gray-400 mr-2">
+                            <i class="fa fa-bolt text-warning" aria-hidden="true"></i>
+                            <span>AI 增强模式已开启</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 输入框 -->
+                <form id="message-form" class="flex items-center">
+                    <div class="relative flex-grow">
+                        <input type="text" 
+                               id="message-input" 
+                               placeholder="输入你的问题... (按Enter发送，Shift+Enter换行)" 
+                               class="w-full px-4 py-3 rounded-full border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-white transition-all shadow-sm focus:shadow-md">
+                        <div class="absolute right-14 top-1/2 transform -translate-y-1/2 flex items-center space-x-1">
+                            <button type="button" class="p-1 rounded-full hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors" title="插入表情">
+                                <i class="fa fa-smile-o text-gray-500" aria-hidden="true"></i>
+                            </button>
+                            <button type="button" class="p-1 rounded-full hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors" title="插入链接">
+                                <i class="fa fa-link text-gray-500" aria-hidden="true"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <button type="submit" 
+                            id="send-button" 
+                            class="ml-2 p-3 bg-gradient-to-r from-primary to-accent text-white rounded-full hover:opacity-90 transition-all transform hover:scale-105 active:scale-95 shadow-md disabled:opacity-50 disabled:cursor-not-allowed relative overflow-hidden group">
+                        <span class="relative z-10 flex items-center justify-center">
+                            <i class="fa fa-paper-plane" aria-hidden="true"></i>
+                        </span>
+                        <span class="absolute inset-0 bg-white bg-opacity-20 scale-0 group-hover:scale-100 transition-transform duration-300 origin-center rounded-full"></span>
+                        <span id="send-indicator" class="absolute inset-0 flex items-center justify-center text-white opacity-0">
+                            <i class="fa fa-check" aria-hidden="true"></i>
+                        </span>
+                    </button>
+                </form>
+                
+                <!-- 提示文本 -->
+                <div class="mt-2 text-xs text-gray-500 dark:text-gray-400 flex items-center justify-between">
+                    <div class="flex items-center space-x-4">
+                        <div class="flex items-center">
+                            <span>按</span>
+                            <kbd class="px-2 py-0.5 bg-gray-200 rounded text-gray-700 dark:bg-gray-700 dark:text-gray-300 mx-1 shadow-sm">Enter</kbd>
+                            <span>发送，</span>
+                            <kbd class="px-2 py-0.5 bg-gray-200 rounded text-gray-700 dark:bg-gray-700 dark:text-gray-300 mx-1 shadow-sm">Shift + Enter</kbd>
+                            <span>换行</span>
+                        </div>
+                        <div id="message-status" class="hidden items-center">
+                            <span class="inline-block w-2 h-2 bg-green-500 rounded-full animate-pulse mr-1"></span>
+                            <span>消息已发送</span>
+                        </div>
+                    </div>
+                    <div id="typing-indicator" class="hidden">
+                        <span class="typing-indicator">
+                            <span class="bg-primary"></span>
+                            <span class="bg-secondary"></span>
+                            <span class="bg-accent"></span>
+                        </span>
+                        <span class="ml-2">AI正在输入...</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 浮动功能按钮 -->
+            <div class="absolute bottom-24 right-6 flex flex-col space-y-2">
+                <button class="p-3 bg-accent text-white rounded-full shadow-lg hover:opacity-90 transition-all transform hover:scale-105" title="生成图片">
+                    <i class="fa fa-picture-o" aria-hidden="true"></i>
+                </button>
+                <button class="p-3 bg-primary text-white rounded-full shadow-lg hover:opacity-90 transition-all transform hover:scale-105" title="语音输入">
+                    <i class="fa fa-microphone" aria-hidden="true"></i>
+                </button>
+                <button class="p-3 bg-success text-white rounded-full shadow-lg hover:opacity-90 transition-all transform hover:scale-105" title="总结对话">
+                    <i class="fa fa-list-alt" aria-hidden="true"></i>
+                </button>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        // 示例回复数据 - 增强版
+        const aiResponses = {
+            "什么是人工智能？": "人工智能（AI）是计算机科学的一个分支，旨在创造能够模拟人类智能的机器。AI系统可以学习、推理、感知、规划和解决问题。\n\n## 现代AI技术包括：\n- **机器学习**：让计算机从数据中学习模式\n- **深度学习**：使用神经网络模拟人脑处理信息\n- **自然语言处理**：使计算机理解和生成人类语言\n- **计算机视觉**：让计算机理解和分析图像和视频\n\n## 应用领域：\n- 医疗：疾病诊断和药物研发\n- 金融：风险评估和欺诈检测\n- 交通：自动驾驶汽车和智能交通系统\n- 娱乐：游戏AI和内容推荐\n\n我是一个基于AI技术的对话助手，可以理解你的问题并提供有用的回答。",
+            
+            "如何学习编程？": "学习编程是一项有价值的技能，以下是一个结构化的学习路径：\n\n## 学习步骤：\n1. **选择入门语言**：Python（易于学习）或JavaScript（Web开发）\n2. **掌握基础概念**：变量、数据类型、循环、条件语句、函数\n3. **实践小项目**：从简单的计算器、待办事项列表开始\n4. **学习数据结构和算法**：理解如何高效组织和处理数据\n5. **参与开源项目**：在GitHub上贡献代码，学习协作\n6. **持续学习**：关注新技术和最佳实践\n\n## 推荐资源：\n- **在线课程**：Coursera、edX、Udemy、freeCodeCamp\n- **编程练习**：LeetCode、HackerRank、Codecademy\n- **文档和社区**：MDN Web Docs、Stack Overflow\n- **视频教程**：YouTube上的编程频道\n\n你想从哪种编程语言开始学习呢？我可以提供更具体的学习资源。",
+            
+            "今天天气怎么样？": "很抱歉，我无法获取实时天气数据。作为AI助手，我没有直接连接到天气API的能力。\n\n## 建议：\n- 查看当地天气预报应用或网站\n- 使用手机上的天气应用程序\n- 搜索\"[你所在城市] 天气预报\"\n\n如果你告诉我你所在的城市，我可以帮你了解该地区的典型天气模式和季节特点。\n\n另外，我可以帮你了解如何使用天气API构建自己的天气查询应用，如果你对此感兴趣的话！",
+            
+            "推荐一部好电影": "根据不同类型，以下是一些广受好评的电影推荐：\n\n## 经典剧情片：\n- 《肖申克的救赎》 - 希望与救赎的故事\n- 《教父》 - 黑帮史诗巨作\n- 《阿甘正传》 - 一个简单人的非凡旅程\n\n## 科幻片：\n- 《盗梦空间》 - 关于梦境的复杂故事\n- 《星际穿越》 - 探索时间、空间和爱的科幻史诗\n- 《银翼杀手2049》 - 视觉震撼的未来世界\n\n## 动画电影：\n- 《千与千寻》 - 宫崎骏的想象力杰作\n- 《心灵奇旅》 - 关于生命意义的深刻探索\n- 《疯狂动物城》 - 关于偏见与包容的故事\n\n## 其他类型：\n- 《寄生虫》 - 社会讽刺喜剧（奥斯卡最佳影片）\n- 《寄生虫》 - 社会阶级差异的黑暗喜剧\n- 《海边的曼彻斯特》 - 关于悲伤和救赎的剧情片\n\n你更喜欢哪种类型的电影？我可以提供更具针对性的推荐。"
+        };
+
+        // 通用回复 - 增强版
+        const defaultResponses = [
+            "这个问题很有趣！让我从多个角度为你分析一下...",
+            "我理解你的问题了，根据最新的信息和研究...",
+            "这是一个很好的问题。让我为你提供一个全面的解答...",
+            "根据我的知识库，我可以提供以下详细信息...",
+            "关于这个话题，有几个关键点值得深入探讨...",
+            "你的问题涉及到多个方面，让我逐一为你解析...",
+            "这是一个常见但很重要的问题。我的建议是...",
+            "作为AI助手，我很高兴能帮你解答这个问题。根据我的理解..."
+        ];
+
+        // 随机获取通用回复
+        function getRandomDefaultResponse() {
+            const randomIndex = Math.floor(Math.random() * defaultResponses.length);
+            return defaultResponses[randomIndex];
+        }
+
+        // 获取AI回复
+        function getAIResponse(message) {
+            // 检查是否有预设回复
+            for (const [key, value] of Object.entries(aiResponses)) {
+                if (message.toLowerCase().includes(key.toLowerCase())) {
+                    return value;
+                }
+            }
+            
+            // 如果没有预设回复，生成通用回复
+            return `${getRandomDefaultResponse()}\n\n你提到了"${message}"，这是一个值得探讨的话题。由于我是一个演示版本，我的知识有限，但我可以尝试提供一些基本信息或建议。\n\n如果你有更具体的问题，我会尽力回答！`;
+        }
+
+        // 格式化时间
+        function formatTime() {
+            const now = new Date();
+            const hours = now.getHours().toString().padStart(2, '0');
+            const minutes = now.getMinutes().toString().padStart(2, '0');
+            return `${hours}:${minutes}`;
+        }
+
+        // 添加用户消息到聊天界面
+        function addUserMessage(message) {
+            const chatContainer = document.getElementById('chat-container');
+            const messageElement = document.createElement('div');
+            messageElement.className = 'flex items-start justify-end mb-4 animate-slide-up';
+            messageElement.innerHTML = `
+                <div class="message-bubble user-message">
+                    <p>${message}</p>
+                    <span class="message-time">${formatTime()}</span>
+                </div>
+            `;
+            chatContainer.appendChild(messageElement);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+            
+            // 更新聊天数据
+            const chat = chats.find(c => c.id === currentChatId);
+            if (chat) {
+                chat.messages.push({
+                    sender: 'user',
+                    text: message,
+                    timestamp: new Date()
+                });
+                chat.lastMessage = message.length > 30 ? message.substring(0, 30) + '...' : message;
+                chat.timestamp = new Date();
+                
+                // 如果是第一条用户消息，更新聊天标题
+                const userMessages = chat.messages.filter(m => m.sender === 'user');
+                if (userMessages.length === 1) {
+                    chat.title = message.length > 20 ? message.substring(0, 20) + '...' : message;
+                }
+                
+                renderChatList();
+            }
+        }
+
+        // 添加AI消息到聊天界面（带打字机效果）
+        function addAIMessage(message) {
+            const chatContainer = document.getElementById('chat-container');
+            const messageElement = document.createElement('div');
+            messageElement.className = 'flex items-start mb-4 animate-slide-up';
+            
+            const timeString = formatTime();
+            const responseId = `ai-response-${Date.now()}`;
+            
+            messageElement.innerHTML = `
+                <img src="https://p26-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/rc/pc/super_tool/c05bf396ae204aaa8eaed550f6b69a19~tplv-a9rns2rl98-image.image?lk3s=8e244e95&rcl=202604181052504E0683AAB58BB1983DD8&rrcfp=f06b921b&x-expires=1779072785&x-signature=1lMyMPGKltIOt2mVuftFpoAguZA%3D" 
+                     alt="AI助手" 
+                     class="h-8 w-8 rounded-full mr-2 flex-shrink-0">
+                <div class="message-bubble ai-message">
+                    <p id="${responseId}"></p>
+                    <span class="message-time">${timeString}</span>
+                </div>
+            `;
+            chatContainer.appendChild(messageElement);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+
+            // 打字机效果
+            const responseElement = document.getElementById(responseId);
+            let i = 0;
+            const typingSpeed = 30; // 打字速度（毫秒/字符）
+            
+            function typeWriter() {
+                if (i < message.length) {
+                    responseElement.textContent += message.charAt(i);
+                    i++;
+                    chatContainer.scrollTop = chatContainer.scrollHeight;
+                    setTimeout(typeWriter, typingSpeed);
+                } else {
+                    // 更新聊天数据
+                    const chat = chats.find(c => c.id === currentChatId);
+                    if (chat) {
+                        chat.messages.push({
+                            sender: 'ai',
+                            text: message,
+                            timestamp: new Date()
+                        });
+                        chat.lastMessage = message.length > 30 ? message.substring(0, 30) + '...' : message;
+                        chat.timestamp = new Date();
+                        renderChatList();
+                    }
+                }
+            }
+            
+            typeWriter();
+        }
+
+        // 显示/隐藏打字指示器
+        function toggleTypingIndicator(show) {
+            const indicator = document.getElementById('typing-indicator');
+            if (show) {
+                indicator.classList.remove('hidden');
+            } else {
+                indicator.classList.add('hidden');
+            }
+        }
+
+        // 处理表单提交 - 优化版
+        document.getElementById('message-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const messageInput = document.getElementById('message-input');
+            const sendButton = document.getElementById('send-button');
+            const message = messageInput.value.trim();
+            
+            if (message) {
+                // 保存原始消息
+                const originalMessage = message;
+                
+                // 清空输入框并添加占位符提示
+                messageInput.value = '';
+                messageInput.placeholder = '发送中...';
+                
+                // 禁用输入框和发送按钮
+                messageInput.disabled = true;
+                sendButton.disabled = true;
+                
+                // 显示发送成功的视觉反馈
+                const sendIndicator = document.getElementById('send-indicator');
+                sendButton.classList.add('bg-green-500');
+                sendButton.classList.remove('bg-gradient-to-r', 'from-primary', 'to-accent');
+                sendIndicator.classList.remove('opacity-0');
+                
+                // 添加用户消息
+                addUserMessage(originalMessage);
+                
+                // 显示打字指示器
+                toggleTypingIndicator(true);
+                
+                // 模拟AI思考时间
+                setTimeout(() => {
+                    // 恢复发送按钮状态
+                    sendButton.classList.remove('bg-green-500');
+                    sendButton.classList.add('bg-gradient-to-r', 'from-primary', 'to-accent');
+                    sendIndicator.classList.add('opacity-0');
+                    
+                    // 隐藏打字指示器
+                    toggleTypingIndicator(false);
+                    
+                    try {
+                        // 添加AI回复
+                        const aiResponse = getAIResponse(originalMessage);
+                        addAIMessage(aiResponse);
+                        
+                        // 恢复输入框状态
+                        messageInput.disabled = false;
+                        messageInput.placeholder = '输入你的问题... (按Enter发送，Shift+Enter换行)';
+                        messageInput.focus();
+                        
+                        // 启用发送按钮
+                        sendButton.disabled = false;
+                        
+                    } catch (error) {
+                        // 错误处理
+                        console.error('发送消息时出错:', error);
+                        
+                        // 显示错误消息
+                        const errorMessage = '抱歉，处理你的请求时出现错误。请稍后重试。';
+                        addAIMessage(errorMessage);
+                        
+                        // 恢复输入框状态
+                        messageInput.disabled = false;
+                        messageInput.placeholder = '输入你的问题... (按Enter发送，Shift+Enter换行)';
+                        messageInput.focus();
+                        
+                        // 启用发送按钮
+                        sendButton.disabled = false;
+                    }
+                }, 1500);
+            } else {
+                // 输入框为空时的反馈
+                messageInput.classList.add('border-red-500');
+                messageInput.placeholder = '请输入内容后再发送';
+                
+                // 2秒后恢复默认占位符
+                setTimeout(() => {
+                    messageInput.classList.remove('border-red-500');
+                    messageInput.placeholder = '输入你的问题... (按Enter发送，Shift+Enter换行)';
+                }, 2000);
+            }
+        });
+
+        // 处理热门话题点击
+        document.querySelectorAll('.topic-btn').forEach(button => {
+            button.addEventListener('click', function() {
+                const topic = this.textContent.trim();
+                document.getElementById('message-input').value = topic;
+                document.getElementById('message-form').dispatchEvent(new Event('submit'));
+            });
+        });
+
+        // 聊天数据管理 - 增强版
+        let chats = [
+            {
+                id: 'chat-1',
+                title: '新对话',
+                lastMessage: 'HELLO！我是AI助手 Pro，很高兴为你服务...',
+                timestamp: new Date(),
+                messages: [
+                    {
+                        sender: 'ai',
+                        text: 'HELLO！我是AI助手 Pro，很高兴为你服务。我已经升级到了全新版本，现在可以为你提供更智能的对话体验、多模态内容生成、实时翻译等功能。你可以问我任何问题，我会尽力提供帮助！',
+                        timestamp: new Date(),
+                        type: 'text',
+                        reactions: [],
+                        saved: false
+                    }
+                ],
+                tags: ['活跃'],
+                model: 'GPT-4',
+                isFavorite: false
+            }
+        ];
+        let currentChatId = 'chat-1';
+        
+        // 用户设置
+        let userSettings = {
+            theme: localStorage.getItem('theme') || 'light',
+            typingSpeed: 30, // 毫秒/字符
+            autoSaveChats: true,
+            soundEnabled: true,
+            notificationsEnabled: true,
+            defaultModel: 'GPT-4',
+            showTimestamps: true,
+            compactMode: false
+        };
+
+        // 渲染聊天列表
+        function renderChatList() {
+            const chatList = document.getElementById('chat-list');
+            chatList.innerHTML = '';
+            
+            chats.forEach(chat => {
+                const chatItem = document.createElement('div');
+                chatItem.className = `chat-item p-3 mb-2 rounded-lg cursor-pointer transition-colors ${chat.id === currentChatId ? 'bg-blue-50 dark:bg-blue-900/30' : 'hover:bg-gray-100 dark:hover:bg-gray-700'}`;
+                
+                const timeString = formatChatTime(chat.timestamp);
+                
+                chatItem.innerHTML = `
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center">
+                            <i class="fa fa-comment-o ${chat.id === currentChatId ? 'text-primary dark:text-blue-300' : 'text-gray-400'} mr-2" aria-hidden="true"></i>
+                            <span class="font-medium truncate">${chat.title}</span>
+                        </div>
+                        <span class="text-xs text-gray-400">${timeString}</span>
+                    </div>
+                    <p class="text-sm text-gray-500 dark:text-gray-400 truncate mt-1">${chat.lastMessage}</p>
+                `;
+                
+                chatItem.addEventListener('click', () => switchChat(chat.id));
+                chatList.appendChild(chatItem);
+            
+            // 重新初始化删除按钮事件
+            initDeleteChatButtons();
+            });
+        }
+
+        // 格式化聊天时间
+        function formatChatTime(timestamp) {
+            const now = new Date();
+            const chatDate = new Date(timestamp);
+            const diffMs = now - chatDate;
+            const diffMins = Math.floor(diffMs / 60000);
+            const diffHours = Math.floor(diffMs / 3600000);
+            const diffDays = Math.floor(diffMs / 86400000);
+            
+            if (diffMins < 1) return '刚刚';
+            if (diffMins < 60) return `${diffMins}分钟前`;
+            if (diffHours < 24) return `${diffHours}小时前`;
+            if (diffDays < 7) return `${diffDays}天前`;
+            
+            return chatDate.toLocaleDateString();
+        }
+
+        // 切换聊天
+        function switchChat(chatId) {
+            currentChatId = chatId;
+            const chat = chats.find(c => c.id === chatId);
+            
+            if (chat) {
+                // 清空当前聊天界面
+                const chatContainer = document.getElementById('chat-container');
+                chatContainer.innerHTML = '';
+                
+                // 渲染聊天消息
+                chat.messages.forEach(message => {
+                    if (message.sender === 'user') {
+                        addUserMessageFromHistory(message.text, message.timestamp);
+                    } else {
+                        addAIMessageFromHistory(message.text, message.timestamp);
+                    }
+                });
+                
+                // 更新聊天列表
+                renderChatList();
+            }
+        }
+
+        // 添加用户消息（从历史记录）
+        function addUserMessageFromHistory(message, timestamp) {
+            const chatContainer = document.getElementById('chat-container');
+            const messageElement = document.createElement('div');
+            messageElement.className = 'flex items-start justify-end mb-4 animate-slide-up';
+            
+            const timeString = new Date(timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+            
+            messageElement.innerHTML = `
+                <div class="message-bubble user-message">
+                    <p>${message}</p>
+                    <span class="message-time">${timeString}</span>
+                </div>
+            `;
+            chatContainer.appendChild(messageElement);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+
+        // 添加AI消息（从历史记录）
+        function addAIMessageFromHistory(message, timestamp) {
+            const chatContainer = document.getElementById('chat-container');
+            const messageElement = document.createElement('div');
+            messageElement.className = 'flex items-start mb-4 animate-slide-up';
+            
+            const timeString = new Date(timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+            
+            messageElement.innerHTML = `
+                <img src="https://p26-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/rc/pc/super_tool/c05bf396ae204aaa8eaed550f6b69a19~tplv-a9rns2rl98-image.image?lk3s=8e244e95&rcl=202604181052504E0683AAB58BB1983DD8&rrcfp=f06b921b&x-expires=1779072785&x-signature=1lMyMPGKltIOt2mVuftFpoAguZA%3D" 
+                     alt="AI助手" 
+                     class="h-8 w-8 rounded-full mr-2 flex-shrink-0">
+                <div class="message-bubble ai-message">
+                    <p>${message}</p>
+                    <span class="message-time">${timeString}</span>
+                </div>
+            `;
+            chatContainer.appendChild(messageElement);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+
+        // 创建新聊天
+        function createNewChat() {
+            const newChatId = `chat-${Date.now()}`;
+            const newChat = {
+                id: newChatId,
+                title: '新对话',
+                lastMessage: 'HELLO！我是AI助手，很高兴为你服务...',
+                timestamp: new Date(),
+                messages: [
+                    {
+                        sender: 'ai',
+                        text: 'HELLO！我是AI助手，很高兴为你服务。你可以问我任何问题，我会尽力提供帮助。',
+                        timestamp: new Date()
+                    }
+                ]
+            };
+            
+            chats.unshift(newChat);
+            switchChat(newChatId);
+        }
+
+        // 处理清空聊天
+        document.getElementById('clear-chat').addEventListener('click', function() {
+            if (confirm('确定要清空当前聊天记录吗？')) {
+                const chat = chats.find(c => c.id === currentChatId);
+                if (chat) {
+                    chat.messages = [
+                        {
+                            sender: 'ai',
+                            text: 'HELLO！我是AI助手，很高兴为你服务。你可以问我任何问题，我会尽力提供帮助。',
+                            timestamp: new Date()
+                        }
+                    ];
+                    chat.lastMessage = 'HELLO！我是AI助手，很高兴为你服务...';
+                    chat.timestamp = new Date();
+                    switchChat(currentChatId);
+                }
+            }
+        });
+        
+        // 处理新聊天按钮
+        document.getElementById('new-chat-btn').addEventListener('click', createNewChat);
+
+        // 处理主题切换 - 增强版
+        document.getElementById('theme-toggle').addEventListener('click', function() {
+            document.documentElement.classList.toggle('dark');
+            
+            // 保存用户偏好
+            userSettings.theme = document.documentElement.classList.contains('dark') ? 'dark' : 'light';
+            saveUserSettings();
+            
+            // 添加切换动画效果
+            gsap.to('body', {
+                duration: 0.3,
+                opacity: 0.8,
+                yoyo: true,
+                repeat: 1,
+                ease: 'power2.inOut'
+            });
+        });
+
+        // 初始化主题 - 增强版
+        function initTheme() {
+            const savedTheme = userSettings.theme;
+            
+            if (savedTheme === 'dark' || (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                document.documentElement.classList.add('dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+            }
+        }
+        
+        // 初始化AOS动画库
+        function initAOS() {
+            if (typeof AOS !== 'undefined') {
+                AOS.init({
+                    duration: 800,
+                    easing: 'ease-in-out',
+                    once: true
+                });
+            }
+        }
+        
+        // 保存用户设置
+        function saveUserSettings() {
+            localStorage.setItem('userSettings', JSON.stringify(userSettings));
+        }
+        
+        // 加载用户设置
+        function loadUserSettings() {
+            const savedSettings = localStorage.getItem('userSettings');
+            if (savedSettings) {
+                userSettings = { ...userSettings, ...JSON.parse(savedSettings) };
+            }
+        }
+        
+        // 播放通知声音
+        function playNotificationSound() {
+            if (userSettings.soundEnabled) {
+                // 这里可以添加声音播放代码
+                console.log('播放通知声音');
+            }
+        }
+
+        // 初始化 - 增强版
+        document.addEventListener('DOMContentLoaded', function() {
+            // 加载用户设置
+            loadUserSettings();
+            
+            // 初始化主题
+            initTheme();
+            
+            // 初始化AOS动画库
+            initAOS();
+            
+            // 渲染聊天列表
+            renderChatList();
+            
+            // 聚焦输入框
+            document.getElementById('message-input').focus();
+            
+            // 处理Enter键发送消息 - 优化版
+            document.getElementById('message-input').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    if (!e.shiftKey) {
+                        e.preventDefault();
+                        
+                        // 添加按键视觉反馈
+                        const sendButton = document.getElementById('send-button');
+                        gsap.to(sendButton, {
+                            scale: 0.95,
+                            duration: 0.1,
+                            yoyo: true,
+                            repeat: 1
+                        });
+                        
+                        document.getElementById('message-form').dispatchEvent(new Event('submit'));
+                    } else {
+                        // Shift+Enter插入换行符，这里不需要特殊处理，浏览器默认行为
+                        console.log('Shift+Enter: 插入换行');
+                    }
+                }
+            });
+            
+            // 添加输入框焦点事件
+            document.getElementById('message-input').addEventListener('focus', function() {
+                this.parentElement.classList.add('ring-2', 'ring-primary', 'ring-opacity-50');
+            });
+            
+            // 添加输入框失焦事件
+            document.getElementById('message-input').addEventListener('blur', function() {
+                this.parentElement.classList.remove('ring-2', 'ring-primary', 'ring-opacity-50');
+            });
+            
+            // 添加输入框输入事件，实时启用/禁用发送按钮
+            document.getElementById('message-input').addEventListener('input', function() {
+                const sendButton = document.getElementById('send-button');
+                const message = this.value.trim();
+                
+                if (message && !this.disabled) {
+                    sendButton.disabled = false;
+                    sendButton.classList.remove('opacity-50', 'cursor-not-allowed');
+                } else {
+                    sendButton.disabled = true;
+                    sendButton.classList.add('opacity-50', 'cursor-not-allowed');
+                }
+            });
+            
+            // 添加页面加载动画
+            gsap.from('header', {
+                y: -50,
+                opacity: 0,
+                duration: 0.8,
+                ease: 'power2.out'
+            });
+            
+            gsap.from('aside', {
+                x: -50,
+                opacity: 0,
+                duration: 0.8,
+                delay: 0.2,
+                ease: 'power2.out'
+            });
+            
+            gsap.from('section', {
+                y: 50,
+                opacity: 0,
+                duration: 0.8,
+                delay: 0.4,
+                ease: 'power2.out'
+            });
+            
+            // 初始化快捷功能按钮事件
+            initQuickActionButtons();
+            
+            // 初始化删除对话按钮事件
+            initDeleteChatButtons();
+            
+            // 初始化帮助和设置按钮事件
+            initUtilityButtons();
+        });
+        
+        // 初始化删除对话按钮
+        function initDeleteChatButtons() {
+            document.querySelectorAll('.delete-chat-btn').forEach(button => {
+                button.addEventListener('click', function(e) {
+                    e.stopPropagation(); // 阻止事件冒泡，避免触发聊天项的点击事件
+                    const chatId = this.getAttribute('data-chat-id');
+                    deleteChat(chatId);
+                });
+            });
+        }
+        
+        // 删除对话
+        function deleteChat(chatId) {
+            if (chats.length <= 1) {
+                alert('至少需要保留一个对话！');
+                return;
+            }
+            
+            if (confirm('确定要删除这个对话吗？此操作无法撤销。')) {
+                // 找到要删除的对话索引
+                const chatIndex = chats.findIndex(c => c.id === chatId);
+                
+                if (chatIndex !== -1) {
+                    // 如果删除的是当前对话，则切换到另一个对话
+                    if (chatId === currentChatId) {
+                        const newChatId = chatIndex === 0 ? chats[1].id : chats[chatIndex - 1].id;
+                        switchChat(newChatId);
+                    }
+                    
+                    // 从数组中删除对话
+                    chats.splice(chatIndex, 1);
+                    
+                    // 重新渲染聊天列表
+                    renderChatList();
+                    
+                    // 重新初始化删除按钮事件
+                    initDeleteChatButtons();
+                }
+            }
+        }
+        
+        // 初始化快捷功能按钮
+        function initQuickActionButtons() {
+            document.querySelectorAll('.quick-action-btn').forEach(button => {
+                button.addEventListener('click', function() {
+                    const action = this.getAttribute('title');
+                    
+                    // 添加点击动画
+                    gsap.to(this, {
+                        scale: 0.95,
+                        duration: 0.1,
+                        yoyo: true,
+                        repeat: 1
+                    });
+                    
+                    // 根据不同功能执行不同操作
+                    switch(action) {
+                        case '创建新文档':
+                            createNewChat();
+                            break;
+                        case '生成图片':
+                            document.getElementById('message-input').value = '请帮我生成一张关于[主题]的图片';
+                            break;
+                        case '语音输入':
+                            toggleVoiceInput();
+                            break;
+                        case '设置':
+                            openSettings();
+                            break;
+                    }
+                });
+            });
+        }
+        
+        // 初始化工具按钮
+        function initUtilityButtons() {
+            // 帮助按钮
+            document.getElementById('help-button').addEventListener('click', function() {
+                alert('AI助手 Pro v2.0\n\n新功能：\n- 多模态内容生成\n- 实时翻译\n- 语音输入\n- 对话总结\n- 文档生成\n\n如有问题，请随时联系我们的支持团队。');
+            });
+            
+            // 设置按钮
+            document.getElementById('settings-button').addEventListener('click', openSettings);
+            
+            // 语音输入按钮
+            document.getElementById('voice-input-btn').addEventListener('click', toggleVoiceInput);
+            
+            // 表情按钮
+            document.getElementById('emoji-btn').addEventListener('click', toggleEmojiPicker);
+            
+            // 附件按钮
+            document.getElementById('attach-file-btn').addEventListener('click', toggleFileAttachment);
+        }
+        
+        // 语音输入功能
+        function toggleVoiceInput() {
+            alert('语音输入功能已启用，请开始说话...');
+            // 这里可以添加实际的语音识别代码
+        }
+        
+        // 表情选择器
+        function toggleEmojiPicker() {
+            alert('表情选择器将在此处显示');
+            // 这里可以添加实际的表情选择器代码
+        }
+        
+        // 文件附件
+        function toggleFileAttachment() {
+            alert('请选择要上传的文件');
+            // 这里可以添加实际的文件上传代码
+        }
+        
+        // 设置面板
+        function openSettings() {
+            const settingsHtml = `
+                <div class="settings-panel fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+                    <div class="bg-white dark:bg-dark-card rounded-xl p-6 w-full max-w-md shadow-2xl">
+                        <div class="flex items-center justify-between mb-4">
+                            <h2 class="text-xl font-bold text-gradient">设置</h2>
+                            <button id="close-settings" class="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full">
+                                <i class="fa fa-times" aria-hidden="true"></i>
+                            </button>
+                        </div>
+                        
+                        <div class="space-y-4">
+                            <div>
+                                <label class="flex items-center justify-between">
+                                    <span class="font-medium">深色模式</span>
+                                    <input type="checkbox" id="theme-toggle-setting" class="toggle-checkbox" ${userSettings.theme === 'dark' ? 'checked' : ''}>
+                                </label>
+                            </div>
+                            
+                            <div>
+                                <label class="flex items-center justify-between">
+                                    <span class="font-medium">声音效果</span>
+                                    <input type="checkbox" id="sound-toggle" class="toggle-checkbox" ${userSettings.soundEnabled ? 'checked' : ''}>
+                                </label>
+                            </div>
+                            
+                            <div>
+                                <label class="flex items-center justify-between">
+                                    <span class="font-medium">通知</span>
+                                    <input type="checkbox" id="notifications-toggle" class="toggle-checkbox" ${userSettings.notificationsEnabled ? 'checked' : ''}>
+                                </label>
+                            </div>
+                            
+                            <div>
+                                <label class="block font-medium mb-2">打字速度</label>
+                                <input type="range" id="typing-speed" min="10" max="100" value="${userSettings.typingSpeed}" class="w-full">
+                                <div class="flex justify-between text-xs text-gray-500">
+                                    <span>快</span>
+                                    <span>慢</span>
+                                </div>
+                            </div>
+                            
+                            <div>
+                                <label class="block font-medium mb-2">默认模型</label>
+                                <select id="default-model" class="w-full p-2 border rounded dark:bg-gray-700 dark:border-gray-600">
+                                    <option value="GPT-4" ${userSettings.defaultModel === 'GPT-4' ? 'selected' : ''}>GPT-4</option>
+                                    <option value="GPT-3.5" ${userSettings.defaultModel === 'GPT-3.5' ? 'selected' : ''}>GPT-3.5</option>
+                                    <option value="Claude" ${userSettings.defaultModel === 'Claude' ? 'selected' : ''}>Claude</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="mt-6 flex justify-end space-x-3">
+                            <button id="reset-settings" class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-100 dark:border-gray-600 dark:hover:bg-gray-700">
+                                恢复默认
+                            </button>
+                            <button id="save-settings" class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-blue-600">
+                                保存设置
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // 创建设置面板
+            const settingsPanel = document.createElement('div');
+            settingsPanel.innerHTML = settingsHtml;
+            document.body.appendChild(settingsPanel);
+            
+            // 添加动画效果
+            gsap.from('.settings-panel > div', {
+                scale: 0.8,
+                opacity: 0,
+                duration: 0.3,
+                ease: 'back.out(1.7)'
+            });
+            
+            // 关闭设置面板
+            document.getElementById('close-settings').addEventListener('click', function() {
+                gsap.to('.settings-panel > div', {
+                    scale: 0.8,
+                    opacity: 0,
+                    duration: 0.2,
+                    onComplete: () => {
+                        document.body.removeChild(settingsPanel);
+                    }
+                });
+            });
+            
+            // 保存设置
+            document.getElementById('save-settings').addEventListener('click', function() {
+                userSettings.theme = document.getElementById('theme-toggle-setting').checked ? 'dark' : 'light';
+                userSettings.soundEnabled = document.getElementById('sound-toggle').checked;
+                userSettings.notificationsEnabled = document.getElementById('notifications-toggle').checked;
+                userSettings.typingSpeed = parseInt(document.getElementById('typing-speed').value);
+                userSettings.defaultModel = document.getElementById('default-model').value;
+                
+                saveUserSettings();
+                initTheme();
+                
+                gsap.to('.settings-panel > div', {
+                    scale: 0.8,
+                    opacity: 0,
+                    duration: 0.2,
+                    onComplete: () => {
+                        document.body.removeChild(settingsPanel);
+                        alert('设置已保存！');
+                    }
+                });
+            });
+            
+            // 重置设置
+            document.getElementById('reset-settings').addEventListener('click', function() {
+                if (confirm('确定要恢复默认设置吗？')) {
+                    userSettings = {
+                        theme: 'light',
+                        typingSpeed: 30,
+                        autoSaveChats: true,
+                        soundEnabled: true,
+                        notificationsEnabled: true,
+                        defaultModel: 'GPT-4',
+                        showTimestamps: true,
+                        compactMode: false
+                    };
+                    
+                    document.getElementById('theme-toggle-setting').checked = false;
+                    document.getElementById('sound-toggle').checked = true;
+                    document.getElementById('notifications-toggle').checked = true;
+                    document.getElementById('typing-speed').value = 30;
+                    document.getElementById('default-model').value = 'GPT-4';
+                }
+            });
+        }
+    </script>
+</body>
+</html>
