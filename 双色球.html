@@ -1,0 +1,759 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>双色球彩票应用 - 每注必中</title>
+    <!-- Tailwind CSS v3 -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome -->
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <!-- GSAP 动画库 -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <!-- html2canvas 海报生成 -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#e53e3e',
+                        secondary: '#3182ce',
+                        accent: '#d69e2e',
+                        dark: '#744210',
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                    animation: {
+                        'bounce-slow': 'bounce 2s infinite',
+                        'spin-slow': 'spin 3s linear infinite',
+                        'pulse-fast': 'pulse 1s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                    }
+                }
+            }
+        }
+    </script>
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .text-shadow {
+                text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+            }
+            .text-shadow-lg {
+                text-shadow: 4px 4px 8px rgba(0, 0, 0, 0.5);
+            }
+            .ball-shadow {
+                filter: drop-shadow(0 10px 8px rgb(0 0 0 / 0.04)) drop-shadow(0 4px 3px rgb(0 0 0 / 0.1));
+            }
+            .confetti {
+                position: absolute;
+                width: 10px;
+                height: 10px;
+                opacity: 0;
+                animation: confetti-fall 3s ease-in-out forwards;
+            }
+            @keyframes confetti-fall {
+                0% {
+                    transform: translateY(-10vh) rotate(0deg);
+                    opacity: 1;
+                }
+                100% {
+                    transform: translateY(100vh) rotate(360deg);
+                    opacity: 0;
+                }
+            }
+            .gold-shine {
+                position: relative;
+                overflow: hidden;
+            }
+            .gold-shine::after {
+                content: '';
+                position: absolute;
+                top: -50%;
+                left: -50%;
+                width: 200%;
+                height: 200%;
+                background: linear-gradient(
+                    to right,
+                    rgba(255, 255, 255, 0) 0%,
+                    rgba(255, 255, 255, 0.3) 50%,
+                    rgba(255, 255, 255, 0) 100%
+                );
+                transform: rotate(30deg);
+                animation: shine 2s infinite;
+            }
+            @keyframes shine {
+                0% {
+                    transform: translateX(-100%) rotate(30deg);
+                }
+                100% {
+                    transform: translateX(100%) rotate(30deg);
+                }
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <!-- 背景图 -->
+    <div class="fixed inset-0 z-0 opacity-10 pointer-events-none">
+        <img src="https://p26-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/rc/pc/super_tool/11ccfa532dfb4bf586b0aea274c68f50~tplv-a9rns2rl98-image.image?lk3s=8e244e95&rcl=20260503222618D90A63319D1014F1C7C4&rrcfp=f06b921b&x-expires=1780410406&x-signature=yIIYVNV3Pdhh0tzQV4AdmtB1nqE%3D" 
+             alt="背景" class="w-full h-full object-cover">
+    </div>
+
+    <div class="relative z-10 container mx-auto px-4 py-8 max-w-4xl">
+        <!-- 顶部标题 -->
+        <header class="text-center mb-8">
+            <h1 class="text-5xl font-bold text-primary mb-2 text-shadow-lg">
+                <span class="inline-block transform -rotate-2">双</span>
+                <span class="inline-block transform rotate-2">色</span>
+                <span class="inline-block transform -rotate-1">球</span>
+            </h1>
+            <p class="text-xl text-gray-700 font-medium">每注必中，梦想成真</p>
+        </header>
+
+        <!-- 主要内容区 -->
+        <main class="bg-white rounded-2xl shadow-xl p-6 mb-8">
+            <!-- 选号区 -->
+            <section class="mb-8">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-2xl font-bold text-primary">选择号码</h2>
+                    <div class="flex space-x-2">
+                        <button id="clearBtn" class="px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded-lg text-gray-700 transition-colors">
+                            <i class="fa fa-refresh mr-1"></i> 清空
+                        </button>
+                        <button id="randomBtn" class="px-4 py-2 bg-secondary hover:bg-blue-600 rounded-lg text-white transition-colors">
+                            <i class="fa fa-random mr-1"></i> 机选
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 红球选择区 -->
+                <div class="mb-6">
+                    <h3 class="text-lg font-semibold text-primary mb-3">红球区 (选择6个)</h3>
+                    <div id="redBalls" class="grid grid-cols-11 gap-2">
+                        <!-- 红球将通过JS动态生成 -->
+                    </div>
+                    <div class="mt-2 text-sm text-gray-500">
+                        已选: <span id="redCount">0</span>/6
+                    </div>
+                </div>
+
+                <!-- 蓝球选择区 -->
+                <div>
+                    <h3 class="text-lg font-semibold text-secondary mb-3">蓝球区 (选择1个)</h3>
+                    <div id="blueBalls" class="grid grid-cols-8 gap-2">
+                        <!-- 蓝球将通过JS动态生成 -->
+                    </div>
+                    <div class="mt-2 text-sm text-gray-500">
+                        已选: <span id="blueCount">0</span>/1
+                    </div>
+                </div>
+            </section>
+
+            <!-- 已选号码展示区 -->
+            <section class="mb-8 p-4 bg-gray-50 rounded-xl">
+                <h2 class="text-xl font-bold text-gray-700 mb-3">已选号码</h2>
+                <div class="flex flex-wrap items-center">
+                    <div id="selectedRedBalls" class="flex flex-wrap gap-2 mr-4">
+                        <!-- 已选红球将在这里显示 -->
+                    </div>
+                    <span class="text-gray-400 mx-1">+</span>
+                    <div id="selectedBlueBalls" class="flex flex-wrap gap-2">
+                        <!-- 已选蓝球将在这里显示 -->
+                    </div>
+                </div>
+            </section>
+
+            <!-- 操作按钮区 -->
+            <section class="text-center">
+                <button id="drawBtn" class="px-8 py-4 bg-accent hover:bg-yellow-600 text-white text-xl font-bold rounded-full shadow-lg transform transition hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed gold-shine">
+                    <i class="fa fa-gift mr-2"></i> 立即开奖
+                </button>
+            </section>
+        </main>
+
+        <!-- 开奖结果弹窗 -->
+        <div id="resultModal" class="fixed inset-0 z-50 flex items-center justify-center hidden">
+            <div class="absolute inset-0 bg-black bg-opacity-50" id="modalOverlay"></div>
+            <div class="relative bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full mx-4 transform transition-all">
+                <button id="closeModal" class="absolute top-4 right-4 text-gray-500 hover:text-gray-700">
+                    <i class="fa fa-times text-xl"></i>
+                </button>
+                
+                <div class="text-center">
+                    <img src="https://p3-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/rc/pc/super_tool/7aa33bf227724dbe865517788f234f09~tplv-a9rns2rl98-image.image?lk3s=8e244e95&rcl=20260503222618D90A63319D1014F1C7C4&rrcfp=f06b921b&x-expires=1780410404&x-signature=6JZg0gxdLp7QgPQ6bRbQlFwFT%2B4%3D" 
+                         alt="恭喜中奖" class="w-32 h-32 mx-auto mb-4">
+                    
+                    <h2 class="text-3xl font-bold text-primary mb-2">恭喜中奖！</h2>
+                    <p class="text-gray-600 mb-6">您的号码全部命中，真是太幸运了！</p>
+                    
+                    <div class="mb-6">
+                        <h3 class="text-lg font-semibold text-gray-700 mb-2">开奖号码</h3>
+                        <div class="flex flex-wrap justify-center items-center">
+                            <div id="resultRedBalls" class="flex flex-wrap justify-center gap-2 mr-2">
+                                <!-- 开奖红球将在这里显示 -->
+                            </div>
+                            <span class="text-gray-400 mx-1">+</span>
+                            <div id="resultBlueBalls" class="flex flex-wrap justify-center gap-2">
+                                <!-- 开奖蓝球将在这里显示 -->
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-6">
+                        <h3 class="text-lg font-semibold text-gray-700 mb-2">奖金金额</h3>
+                        <p id="prizeAmount" class="text-4xl font-bold text-accent text-shadow">¥10,000,000</p>
+                    </div>
+                    
+                    <div class="flex justify-center gap-3">
+                        <button id="saveRecordBtn" class="px-5 py-3 bg-secondary hover:bg-blue-600 text-white font-bold rounded-lg transition-colors">
+                            <i class="fa fa-save mr-1"></i> 保存记录
+                        </button>
+                        <button id="shareWechatBtn" class="px-5 py-3 bg-green-600 hover:bg-green-700 text-white font-bold rounded-lg transition-colors">
+                            <i class="fa fa-wechat mr-1"></i> 分享朋友圈
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 分享海报预览弹窗 -->
+        <div id="posterModal" class="fixed inset-0 z-60 flex items-center justify-center hidden">
+            <div class="absolute inset-0 bg-black bg-opacity-70" id="posterOverlay"></div>
+            <div class="relative bg-white p-4 rounded-xl max-w-sm w-full mx-4">
+                <button id="closePoster" class="absolute top-2 right-2 z-10 bg-white rounded-full w-8 h-8 flex items-center justify-center shadow">
+                    <i class="fa fa-times"></i>
+                </button>
+                <div class="text-center mb-3">
+                    <h3 class="text-lg font-bold">长按图片分享到微信朋友圈</h3>
+                </div>
+                <img id="posterImg" src="" class="w-full rounded-xl shadow-lg">
+            </div>
+        </div>
+
+        <!-- 中奖记录区 -->
+        <section class="bg-white rounded-2xl shadow-xl p-6">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-2xl font-bold text-primary">中奖记录</h2>
+                <button id="clearRecordsBtn" class="px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded-lg text-gray-700 transition-colors">
+                    <i class="fa fa-trash mr-1"></i> 清空记录
+                </button>
+            </div>
+            
+            <div id="recordsList" class="space-y-4">
+                <!-- 中奖记录将通过JS动态生成 -->
+                <div class="text-center text-gray-500 py-8" id="noRecordsMsg">
+                    暂无中奖记录，快来试试手气吧！
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <!-- 页脚 -->
+    <footer class="text-center text-gray-500 py-4 text-sm">
+        <p>本应用仅供娱乐，非官方彩票应用</p>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // 全局变量
+            let selectedRedBalls = [];
+            let selectedBlueBalls = [];
+            let winningRecords = JSON.parse(localStorage.getItem('winningRecords')) || [];
+            
+            // DOM 元素
+            const redBallsContainer = document.getElementById('redBalls');
+            const blueBallsContainer = document.getElementById('blueBalls');
+            const selectedRedBallsContainer = document.getElementById('selectedRedBalls');
+            const selectedBlueBallsContainer = document.getElementById('selectedBlueBalls');
+            const redCountElement = document.getElementById('redCount');
+            const blueCountElement = document.getElementById('blueCount');
+            const drawBtn = document.getElementById('drawBtn');
+            const clearBtn = document.getElementById('clearBtn');
+            const randomBtn = document.getElementById('randomBtn');
+            const resultModal = document.getElementById('resultModal');
+            const closeModal = document.getElementById('closeModal');
+            const modalOverlay = document.getElementById('modalOverlay');
+            const resultRedBallsContainer = document.getElementById('resultRedBalls');
+            const resultBlueBallsContainer = document.getElementById('resultBlueBalls');
+            const prizeAmountElement = document.getElementById('prizeAmount');
+            const saveRecordBtn = document.getElementById('saveRecordBtn');
+            const recordsList = document.getElementById('recordsList');
+            const noRecordsMsg = document.getElementById('noRecordsMsg');
+            const clearRecordsBtn = document.getElementById('clearRecordsBtn');
+
+            // 分享朋友圈相关
+            const shareWechatBtn = document.getElementById('shareWechatBtn');
+            const posterModal = document.getElementById('posterModal');
+            const closePoster = document.getElementById('closePoster');
+            const posterOverlay = document.getElementById('posterOverlay');
+            const posterImg = document.getElementById('posterImg');
+            
+            // 初始化
+            initBalls();
+            updateDrawButtonState();
+            renderWinningRecords();
+            
+            // 生成红球
+            function initBalls() {
+                // 生成红球 (1-33)
+                for (let i = 1; i <= 33; i++) {
+                    const ball = createBall(i, 'red', i <= 9 ? `0${i}` : i.toString());
+                    redBallsContainer.appendChild(ball);
+                }
+                
+                // 生成蓝球 (1-16)
+                for (let i = 1; i <= 16; i++) {
+                    const ball = createBall(i, 'blue', i <= 9 ? `0${i}` : i.toString());
+                    blueBallsContainer.appendChild(ball);
+                }
+            }
+            
+            // 创建球元素
+            function createBall(number, color, displayText) {
+                const ball = document.createElement('div');
+                ball.className = `w-10 h-10 rounded-full flex items-center justify-center text-white font-bold cursor-pointer transition-transform hover:scale-110 ${color === 'red' ? 'bg-primary' : 'bg-secondary'}`;
+                ball.dataset.number = number;
+                ball.dataset.color = color;
+                ball.textContent = displayText;
+                
+                ball.addEventListener('click', function() {
+                    toggleBallSelection(ball);
+                });
+                
+                return ball;
+            }
+            
+            // 切换球的选中状态
+            function toggleBallSelection(ball) {
+                const number = parseInt(ball.dataset.number);
+                const color = ball.dataset.color;
+                
+                if (color === 'red') {
+                    // 处理红球选择
+                    const index = selectedRedBalls.indexOf(number);
+                    if (index === -1) {
+                        // 选中红球
+                        if (selectedRedBalls.length < 6) {
+                            selectedRedBalls.push(number);
+                            ball.classList.add('ring-4', 'ring-yellow-400', 'scale-110');
+                        }
+                    } else {
+                        // 取消选中红球
+                        selectedRedBalls.splice(index, 1);
+                        ball.classList.remove('ring-4', 'ring-yellow-400', 'scale-110');
+                    }
+                    redCountElement.textContent = selectedRedBalls.length;
+                } else {
+                    // 处理蓝球选择
+                    const index = selectedBlueBalls.indexOf(number);
+                    if (index === -1) {
+                        // 选中蓝球
+                        if (selectedBlueBalls.length < 1) {
+                            selectedBlueBalls.push(number);
+                            ball.classList.add('ring-4', 'ring-yellow-400', 'scale-110');
+                        }
+                    } else {
+                        // 取消选中蓝球
+                        selectedBlueBalls.splice(index, 1);
+                        ball.classList.remove('ring-4', 'ring-yellow-400', 'scale-110');
+                    }
+                    blueCountElement.textContent = selectedBlueBalls.length;
+                }
+                
+                updateSelectedBallsDisplay();
+                updateDrawButtonState();
+            }
+            
+            // 更新已选号码显示
+            function updateSelectedBallsDisplay() {
+                // 清空已选号码容器
+                selectedRedBallsContainer.innerHTML = '';
+                selectedBlueBallsContainer.innerHTML = '';
+                
+                // 显示已选红球
+                selectedRedBalls.sort((a, b) => a - b).forEach(number => {
+                    const ball = document.createElement('div');
+                    ball.className = 'w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center text-sm font-bold';
+                    ball.textContent = number <= 9 ? `0${number}` : number.toString();
+                    selectedRedBallsContainer.appendChild(ball);
+                });
+                
+                // 显示已选蓝球
+                selectedBlueBalls.sort((a, b) => a - b).forEach(number => {
+                    const ball = document.createElement('div');
+                    ball.className = 'w-8 h-8 rounded-full bg-secondary text-white flex items-center justify-center text-sm font-bold';
+                    ball.textContent = number <= 9 ? `0${number}` : number.toString();
+                    selectedBlueBallsContainer.appendChild(ball);
+                });
+            }
+            
+            // 更新开奖按钮状态
+            function updateDrawButtonState() {
+                drawBtn.disabled = selectedRedBalls.length !== 6 || selectedBlueBalls.length !== 1;
+            }
+            
+            // 清空选择
+            clearBtn.addEventListener('click', function() {
+                // 重置选中数组
+                selectedRedBalls = [];
+                selectedBlueBalls = [];
+                
+                // 更新计数
+                redCountElement.textContent = '0';
+                blueCountElement.textContent = '0';
+                
+                // 重置球的样式
+                document.querySelectorAll('#redBalls > div, #blueBalls > div').forEach(ball => {
+                    ball.classList.remove('ring-4', 'ring-yellow-400', 'scale-110');
+                });
+                
+                // 更新已选号码显示
+                updateSelectedBallsDisplay();
+                
+                // 更新按钮状态
+                updateDrawButtonState();
+            });
+            
+            // 机选号码
+            randomBtn.addEventListener('click', function() {
+                // 清空当前选择
+                clearBtn.click();
+                
+                // 随机选择6个红球
+                while (selectedRedBalls.length < 6) {
+                    const randomNum = Math.floor(Math.random() * 33) + 1;
+                    if (!selectedRedBalls.includes(randomNum)) {
+                        selectedRedBalls.push(randomNum);
+                        
+                        // 更新球的样式
+                        const ball = document.querySelector(`#redBalls > div[data-number="${randomNum}"]`);
+                        if (ball) {
+                            ball.classList.add('ring-4', 'ring-yellow-400', 'scale-110');
+                        }
+                    }
+                }
+                
+                // 随机选择1个蓝球
+                const randomBlueNum = Math.floor(Math.random() * 16) + 1;
+                selectedBlueBalls.push(randomBlueNum);
+                
+                // 更新蓝球样式
+                const blueBall = document.querySelector(`#blueBalls > div[data-number="${randomBlueNum}"]`);
+                if (blueBall) {
+                    blueBall.classList.add('ring-4', 'ring-yellow-400', 'scale-110');
+                }
+                
+                // 更新计数
+                redCountElement.textContent = '6';
+                blueCountElement.textContent = '1';
+                
+                // 更新已选号码显示
+                updateSelectedBallsDisplay();
+                
+                // 更新按钮状态
+                updateDrawButtonState();
+            });
+            
+            // 开奖
+            drawBtn.addEventListener('click', function() {
+                if (selectedRedBalls.length === 6 && selectedBlueBalls.length === 1) {
+                    showDrawResult();
+                }
+            });
+            
+            // 显示开奖结果
+            function showDrawResult() {
+                // 清空结果容器
+                resultRedBallsContainer.innerHTML = '';
+                resultBlueBallsContainer.innerHTML = '';
+                
+                // 显示开奖红球（与选中的红球相同）
+                selectedRedBalls.sort((a, b) => a - b).forEach(number => {
+                    const ball = document.createElement('div');
+                    ball.className = 'w-10 h-10 rounded-full bg-primary text-white flex items-center justify-center font-bold ball-shadow';
+                    ball.textContent = number <= 9 ? `0${number}` : number.toString();
+                    ball.style.opacity = '0';
+                    ball.style.transform = 'scale(0)';
+                    resultRedBallsContainer.appendChild(ball);
+                    
+                    // 添加动画
+                    setTimeout(() => {
+                        gsap.to(ball, {
+                            opacity: 1,
+                            scale: 1,
+                            duration: 0.5,
+                            ease: "back.out(1.7)"
+                        });
+                    }, 100);
+                });
+                
+                // 显示开奖蓝球（与选中的蓝球相同）
+                selectedBlueBalls.forEach(number => {
+                    const ball = document.createElement('div');
+                    ball.className = 'w-10 h-10 rounded-full bg-secondary text-white flex items-center justify-center font-bold ball-shadow';
+                    ball.textContent = number <= 9 ? `0${number}` : number.toString();
+                    ball.style.opacity = '0';
+                    ball.style.transform = 'scale(0)';
+                    resultBlueBallsContainer.appendChild(ball);
+                    
+                    // 添加动画
+                    setTimeout(() => {
+                        gsap.to(ball, {
+                            opacity: 1,
+                            scale: 1,
+                            duration: 0.5,
+                            ease: "back.out(1.7)"
+                        });
+                    }, 700);
+                });
+                
+                // 生成随机奖金（500万到1000万之间）
+                const minPrize = 5000000;
+                const maxPrize = 10000000;
+                const prizeAmount = Math.floor(Math.random() * (maxPrize - minPrize + 1)) + minPrize;
+                
+                // 格式化奖金金额
+                const formattedPrize = prizeAmount.toLocaleString('zh-CN');
+                prizeAmountElement.textContent = `¥${formattedPrize}`;
+                
+                // 添加奖金数字动画
+                prizeAmountElement.style.opacity = '0';
+                prizeAmountElement.style.transform = 'translateY(20px)';
+                
+                setTimeout(() => {
+                    gsap.to(prizeAmountElement, {
+                        opacity: 1,
+                        y: 0,
+                        duration: 0.8,
+                        delay: 0.5
+                    });
+                }, 100);
+                
+                // 显示弹窗
+                resultModal.classList.remove('hidden');
+                
+                // 创建庆祝特效
+                createConfetti();
+            }
+            
+            // 创建五彩纸屑特效
+            function createConfetti() {
+                const colors = ['#e53e3e', '#dd6b20', '#d69e2e', '#38a169', '#3182ce', '#805ad5'];
+                const confettiContainer = document.createElement('div');
+                confettiContainer.className = 'fixed inset-0 z-50 pointer-events-none';
+                document.body.appendChild(confettiContainer);
+                
+                // 创建100个五彩纸屑
+                for (let i = 0; i < 100; i++) {
+                    const confetti = document.createElement('div');
+                    confetti.className = 'confetti';
+                    confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                    confetti.style.left = `${Math.random() * 100}%`;
+                    confetti.style.width = `${Math.random() * 10 + 5}px`;
+                    confetti.style.height = `${Math.random() * 10 + 5}px`;
+                    confetti.style.animationDelay = `${Math.random() * 3}s`;
+                    confetti.style.animationDuration = `${Math.random() * 3 + 2}s`;
+                    confettiContainer.appendChild(confetti);
+                }
+                
+                // 3秒后移除五彩纸屑容器
+                setTimeout(() => {
+                    confettiContainer.remove();
+                }, 5000);
+            }
+            
+            // 关闭弹窗
+            closeModal.addEventListener('click', function() {
+                resultModal.classList.add('hidden');
+            });
+            
+            modalOverlay.addEventListener('click', function() {
+                resultModal.classList.add('hidden');
+            });
+            
+            // 保存中奖记录
+            saveRecordBtn.addEventListener('click', function() {
+                const record = {
+                    id: Date.now(),
+                    date: new Date().toLocaleString('zh-CN'),
+                    redBalls: [...selectedRedBalls].sort((a, b) => a - b),
+                    blueBalls: [...selectedBlueBalls].sort((a, b) => a - b),
+                    prizeAmount: prizeAmountElement.textContent
+                };
+                
+                // 添加到记录数组
+                winningRecords.unshift(record);
+                
+                // 保存到本地存储
+                localStorage.setItem('winningRecords', JSON.stringify(winningRecords));
+                
+                // 更新记录显示
+                renderWinningRecords();
+                
+                // 关闭弹窗
+                resultModal.classList.add('hidden');
+            });
+            
+            // 渲染中奖记录
+            function renderWinningRecords() {
+                // 清空记录列表
+                recordsList.innerHTML = '';
+                
+                if (winningRecords.length === 0) {
+                    // 显示无记录提示
+                    noRecordsMsg.classList.remove('hidden');
+                    recordsList.appendChild(noRecordsMsg);
+                } else {
+                    // 隐藏无记录提示
+                    noRecordsMsg.classList.add('hidden');
+                    
+                    // 渲染每条记录
+                    winningRecords.forEach(record => {
+                        const recordElement = document.createElement('div');
+                        recordElement.className = 'p-4 border border-gray-200 rounded-xl hover:shadow-md transition-shadow';
+                        
+                        // 格式化红球
+                        const formattedRedBalls = record.redBalls.map(num => 
+                            num <= 9 ? `0${num}` : num.toString()
+                        ).join(', ');
+                        
+                        // 格式化蓝球
+                        const formattedBlueBalls = record.blueBalls.map(num => 
+                            num <= 9 ? `0${num}` : num.toString()
+                        ).join(', ');
+                        
+                        recordElement.innerHTML = `
+                            <div class="flex justify-between items-start">
+                                <div>
+                                    <p class="text-sm text-gray-500">${record.date}</p>
+                                    <div class="flex items-center mt-1">
+                                        <span class="text-primary font-medium">${formattedRedBalls}</span>
+                                        <span class="mx-1 text-gray-400">+</span>
+                                        <span class="text-secondary font-medium">${formattedBlueBalls}</span>
+                                    </div>
+                                </div>
+                                <div class="text-right">
+                                    <p class="text-accent font-bold text-lg">${record.prizeAmount}</p>
+                                    <p class="text-xs text-gray-500">恭喜中奖！</p>
+                                </div>
+                            </div>
+                        `;
+                        
+                        recordsList.appendChild(recordElement);
+                    });
+                }
+            }
+            
+            // 清空中奖记录
+            clearRecordsBtn.addEventListener('click', function() {
+                if (confirm('确定要清空所有中奖记录吗？')) {
+                    winningRecords = [];
+                    localStorage.removeItem('winningRecords');
+                    renderWinningRecords();
+                }
+            });
+
+            // ==================== 分享到朋友圈功能（修复版） ====================
+            shareWechatBtn.addEventListener('click', async () => {
+                resultModal.classList.add('hidden');
+                const red = [...selectedRedBalls].sort((a,b)=>a-b);
+                const blue = [...selectedBlueBalls];
+                const prize = prizeAmountElement.textContent;
+                const time = new Date().toLocaleString();
+
+                // 创建临时海报元素（不依赖隐藏DOM）
+                const poster = document.createElement('div');
+                poster.style.width = '300px';
+                poster.style.padding = '24px';
+                poster.style.background = 'linear-gradient(to bottom, #dc2626, #b91c1c)';
+                poster.style.borderRadius = '16px';
+                poster.style.color = '#fff';
+                poster.style.fontFamily = 'system-ui, sans-serif';
+                poster.style.display = 'flex';
+                poster.style.flexDirection = 'column';
+                poster.style.alignItems = 'center';
+                poster.style.justifyContent = 'space-between';
+                poster.style.position = 'absolute';
+                poster.style.left = '-9999px';
+                poster.style.top = '0';
+
+                // 填充海报内容
+                poster.innerHTML = `
+                    <div style="text-align:center;">
+                        <h2 style="color:#fde047; font-size:24px; font-weight:bold; margin:0 0 4px;">恭喜中奖</h2>
+                        <p style="font-size:12px; opacity:0.8;">${time}</p>
+                    </div>
+                    <div style="margin:24px 0;">
+                        <p style="font-size:14px; margin:0 0 12px; text-align:center;">中奖号码</p>
+                        <div style="display:flex; gap:8px; justify-content:center; margin-bottom:12px;" id="pr"></div>
+                        <div style="display:flex; gap:8px; justify-content:center;" id="pb"></div>
+                    </div>
+                    <div style="text-align:center; margin-bottom:24px;">
+                        <p style="font-size:14px; margin:0 0 4px;">奖金金额</p>
+                        <p style="color:#fde047; font-size:28px; font-weight:bold; margin:0;">${prize}</p>
+                    </div>
+                    <div style="font-size:12px; opacity:0.7; text-align:center;">
+                        双色球｜每注必中｜仅供娱乐
+                    </div>
+                `;
+
+                document.body.appendChild(poster);
+
+                // 填充号码
+                const pr = poster.querySelector('#pr');
+                const pb = poster.querySelector('#pb');
+                red.forEach(n => {
+                    const b = document.createElement('div');
+                    b.style.width = '32px';
+                    b.style.height = '32px';
+                    b.style.borderRadius = '50%';
+                    b.style.backgroundColor = '#fff';
+                    b.style.color = '#dc2626';
+                    b.style.display = 'flex';
+                    b.style.alignItems = 'center';
+                    b.style.justifyContent = 'center';
+                    b.style.fontWeight = 'bold';
+                    b.style.fontSize = '14px';
+                    b.innerText = n < 10 ? '0'+n : n;
+                    pr.appendChild(b);
+                });
+                blue.forEach(n => {
+                    const b = document.createElement('div');
+                    b.style.width = '32px';
+                    b.style.height = '32px';
+                    b.style.borderRadius = '50%';
+                    b.style.backgroundColor = '#fff';
+                    b.style.color = '#3182ce';
+                    b.style.display = 'flex';
+                    b.style.alignItems = 'center';
+                    b.style.justifyContent = 'center';
+                    b.style.fontWeight = 'bold';
+                    b.style.fontSize = '14px';
+                    b.innerText = n < 10 ? '0'+n : n;
+                    pb.appendChild(b);
+                });
+
+                // 生成图片
+                try {
+                    const canvas = await html2canvas(poster, {
+                        backgroundColor: null,
+                        useCORS: true,
+                        scale: 2,
+                        logging: false
+                    });
+                    posterImg.src = canvas.toDataURL('image/png');
+                    posterModal.classList.remove('hidden');
+                } catch (e) {
+                    alert('生成海报失败，请重试');
+                } finally {
+                    document.body.removeChild(poster);
+                }
+            });
+
+            closePoster.onclick = () => posterModal.classList.add('hidden');
+            posterOverlay.onclick = () => posterModal.classList.add('hidden');
+        });
+    </script>
+</body>
+</html>

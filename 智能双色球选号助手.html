@@ -1,0 +1,1853 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>双色球AI推荐 - 智能彩票选号助手</title>
+    <!-- Tailwind CSS v3 -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome -->
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.8/dist/chart.umd.min.js"></script>
+    <!-- 统一的 Tailwind 配置 -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#1e40af', // 深蓝主色调
+                        secondary: '#f97316', // 活力橙强调色
+                        neutral: {
+                            100: '#f5f5f5',
+                            200: '#e5e5e5',
+                            300: '#d4d4d4',
+                            400: '#a3a3a3',
+                            500: '#737373',
+                            600: '#525252',
+                            700: '#404040',
+                            800: '#262626',
+                            900: '#171717',
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                    animation: {
+                        'bounce-slow': 'bounce 3s infinite',
+                        'pulse-slow': 'pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                    }
+                }
+            }
+        }
+    </script>
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .content-auto {
+                content-visibility: auto;
+            }
+            .text-shadow {
+                text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            }
+            .glass {
+                background: rgba(255, 255, 255, 0.25);
+                backdrop-filter: blur(10px);
+                -webkit-backdrop-filter: blur(10px);
+                border: 1px solid rgba(255, 255, 255, 0.18);
+            }
+            .glass-dark {
+                background: rgba(30, 64, 175, 0.7);
+                backdrop-filter: blur(10px);
+                -webkit-backdrop-filter: blur(10px);
+                border: 1px solid rgba(255, 255, 255, 0.08);
+            }
+            .number-ball {
+                @apply flex items-center justify-center rounded-full font-bold shadow-lg transition-all duration-300;
+            }
+            .number-ball-red {
+                @apply bg-red-500 text-white number-ball;
+            }
+            .number-ball-blue {
+                @apply bg-blue-500 text-white number-ball;
+            }
+            .number-ball-selected {
+                @apply ring-4 ring-secondary scale-110;
+            }
+            .number-ball-hover:hover {
+                @apply scale-110 shadow-xl;
+            }
+            .chart-container {
+                position: relative;
+                height: 300px;
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen">
+    <!-- 导航栏 -->
+    <nav class="bg-primary text-white shadow-lg">
+        <div class="container mx-auto px-4 py-3 flex justify-between items-center">
+            <div class="flex items-center space-x-2">
+                <i class="fa fa-line-chart text-2xl text-secondary"></i>
+                <h1 class="text-xl font-bold">双色球AI推荐</h1>
+            </div>
+            <div class="hidden md:flex space-x-6">
+                <a href="#data-analysis" class="hover:text-secondary transition-colors duration-300 flex items-center">
+                    <i class="fa fa-bar-chart mr-1"></i> 数据分析
+                </a>
+                <a href="#ai-recommendation" class="hover:text-secondary transition-colors duration-300 flex items-center">
+                    <i class="fa fa-magic mr-1"></i> AI推荐
+                </a>
+                <a href="#my-records" class="hover:text-secondary transition-colors duration-300 flex items-center">
+                    <i class="fa fa-history mr-1"></i> 我的记录
+                </a>
+            </div>
+            <div class="md:hidden">
+                <button id="mobile-menu-button" class="text-white focus:outline-none">
+                    <i class="fa fa-bars text-xl"></i>
+                </button>
+            </div>
+        </div>
+        <!-- 移动端菜单 -->
+        <div id="mobile-menu" class="hidden md:hidden bg-primary-dark">
+            <div class="container mx-auto px-4 py-2 flex flex-col space-y-2">
+                <a href="#data-analysis" class="hover:text-secondary transition-colors duration-300 py-2 flex items-center">
+                    <i class="fa fa-bar-chart mr-2"></i> 数据分析
+                </a>
+                <a href="#ai-recommendation" class="hover:text-secondary transition-colors duration-300 py-2 flex items-center">
+                    <i class="fa fa-magic mr-2"></i> AI推荐
+                </a>
+                <a href="#my-records" class="hover:text-secondary transition-colors duration-300 py-2 flex items-center">
+                    <i class="fa fa-history mr-2"></i> 我的记录
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- 主要内容 -->
+    <main class="container mx-auto px-4 py-8">
+        <!-- 欢迎区域 -->
+        <section class="mb-12 text-center">
+            <h2 class="text-4xl font-bold text-primary mb-4 text-shadow">智能双色球选号助手</h2>
+            <p class="text-lg text-neutral-600 max-w-3xl mx-auto">
+                利用AI算法分析历史开奖数据，为您提供科学的号码推荐，增强购彩体验和乐趣。
+                请注意：彩票是一种娱乐方式，请理性购彩，量力而行。
+            </p>
+        </section>
+
+        <!-- 最新开奖结果 -->
+        <section class="mb-12 bg-white rounded-xl shadow-lg p-6 transform transition-all duration-500 hover:shadow-xl">
+            <h3 class="text-2xl font-bold text-primary mb-4 flex items-center">
+                <i class="fa fa-trophy text-secondary mr-2"></i>
+                最新开奖结果
+            </h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="flex flex-col justify-center">
+                    <div class="mb-4">
+                        <span class="text-neutral-500">期号：</span>
+                        <span class="text-xl font-semibold text-primary" id="latest-period">2026052</span>
+                    </div>
+                    <div class="mb-4">
+                        <span class="text-neutral-500">开奖日期：</span>
+                        <span class="text-lg font-medium" id="latest-date">2026-05-01</span>
+                    </div>
+                    <div class="mb-4">
+                        <span class="text-neutral-500">销售额：</span>
+                        <span class="text-lg font-medium" id="latest-sales">372,546,890 元</span>
+                    </div>
+                    <div>
+                        <span class="text-neutral-500">奖池金额：</span>
+                        <span class="text-lg font-medium text-secondary" id="latest-prize-pool">1,856,723,450 元</span>
+                    </div>
+                </div>
+                <div class="flex flex-col items-center justify-center">
+                    <div class="text-lg font-semibold mb-4">开奖号码</div>
+                    <div class="flex flex-wrap justify-center gap-3 mb-4">
+                        <div class="number-ball-red w-12 h-12 text-lg">07</div>
+                        <div class="number-ball-red w-12 h-12 text-lg">10</div>
+                        <div class="number-ball-red w-12 h-12 text-lg">16</div>
+                        <div class="number-ball-red w-12 h-12 text-lg">22</div>
+                        <div class="number-ball-red w-12 h-12 text-lg">26</div>
+                        <div class="number-ball-red w-12 h-12 text-lg">31</div>
+                    </div>
+                    <div class="number-ball-blue w-14 h-14 text-xl">06</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 数据分析区域 -->
+        <section id="data-analysis" class="mb-12 scroll-mt-20">
+            <h3 class="text-2xl font-bold text-primary mb-6 flex items-center">
+                <i class="fa fa-bar-chart text-secondary mr-2"></i>
+                历史数据分析
+            </h3>
+            
+            <!-- 图表选择器 -->
+            <div class="bg-white rounded-xl shadow-lg p-6 mb-8">
+                <div class="flex flex-wrap gap-4 mb-6">
+                    <button class="chart-tab active px-4 py-2 rounded-full bg-primary text-white hover:bg-primary/90 transition-colors duration-300" data-chart="frequency">
+                        号码出现频率
+                    </button>
+                    <button class="chart-tab px-4 py-2 rounded-full bg-neutral-200 text-neutral-700 hover:bg-neutral-300 transition-colors duration-300" data-chart="heatmap">
+                        热号冷号分布
+                    </button>
+                    <button class="chart-tab px-4 py-2 rounded-full bg-neutral-200 text-neutral-700 hover:bg-neutral-300 transition-colors duration-300" data-chart="odd-even">
+                        奇偶分布
+                    </button>
+                    <button class="chart-tab px-4 py-2 rounded-full bg-neutral-200 text-neutral-700 hover:bg-neutral-300 transition-colors duration-300" data-chart="zone">
+                        区间分布
+                    </button>
+                </div>
+                
+                <!-- 图表容器 -->
+                <div class="chart-container">
+                    <canvas id="data-chart"></canvas>
+                </div>
+            </div>
+            
+            <!-- 历史开奖数据表格 -->
+            <div class="bg-white rounded-xl shadow-lg overflow-hidden">
+                <div class="p-4 bg-primary text-white flex justify-between items-center">
+                    <h4 class="font-semibold">最近10期开奖数据</h4>
+                    <button id="export-data" class="bg-white text-primary px-3 py-1 rounded-md text-sm hover:bg-neutral-100 transition-colors duration-300 flex items-center">
+                        <i class="fa fa-download mr-1"></i> 导出数据
+                    </button>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left">
+                        <thead class="bg-neutral-100">
+                            <tr>
+                                <th class="p-3">期号</th>
+                                <th class="p-3">开奖日期</th>
+                                <th class="p-3">红球号码</th>
+                                <th class="p-3">蓝球号码</th>
+                                <th class="p-3">销售额(元)</th>
+                                <th class="p-3">奖池金额(元)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="history-table-body">
+                            <!-- 表格数据将通过JavaScript动态生成 -->
+                        </tbody>
+                    </table>
+                </div>
+                <div class="p-4 flex justify-center">
+                    <button id="load-more" class="text-primary hover:text-primary/80 transition-colors duration-300 flex items-center">
+                        加载更多 <i class="fa fa-angle-down ml-1"></i>
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- AI推荐区域 -->
+        <section id="ai-recommendation" class="mb-12 scroll-mt-20">
+            <h3 class="text-2xl font-bold text-primary mb-6 flex items-center">
+                <i class="fa fa-magic text-secondary mr-2"></i>
+                AI智能推荐
+            </h3>
+            
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <!-- AI推荐设置 -->
+                <div class="lg:col-span-1">
+                    <div class="bg-white rounded-xl shadow-lg p-6">
+                        <h4 class="text-lg font-semibold text-primary mb-4">推荐设置</h4>
+                        
+                        <div class="mb-6">
+                            <label class="block text-neutral-700 mb-2">推荐注数</label>
+                            <div class="flex items-center">
+                                <button id="decrease-amount" class="w-10 h-10 rounded-l bg-neutral-200 flex items-center justify-center hover:bg-neutral-300 transition-colors duration-300">
+                                    <i class="fa fa-minus"></i>
+                                </button>
+                                <input type="number" id="recommendation-amount" min="1" max="10" value="5" class="w-16 h-10 text-center border-t border-b border-neutral-200 focus:outline-none focus:ring-2 focus:ring-primary">
+                                <button id="increase-amount" class="w-10 h-10 rounded-r bg-neutral-200 flex items-center justify-center hover:bg-neutral-300 transition-colors duration-300">
+                                    <i class="fa fa-plus"></i>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-6">
+                            <label class="block text-neutral-700 mb-2">推荐算法</label>
+                            <select id="algorithm-select" class="w-full p-2 border border-neutral-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary">
+                                <option value="hot-cold">热冷号平衡</option>
+                                <option value="frequency">频率分析</option>
+                                <option value="pattern">模式识别</option>
+                                <option value="comprehensive">综合分析</option>
+                            </select>
+                        </div>
+                        
+                        <div class="mb-6">
+                            <label class="block text-neutral-700 mb-2">自定义参数</label>
+                            <div class="space-y-3">
+                                <div>
+                                    <label class="flex justify-between text-sm text-neutral-600">
+                                        <span>热号比例</span>
+                                        <span id="hot-ratio-value">50%</span>
+                                    </label>
+                                    <input type="range" id="hot-ratio" min="0" max="100" value="50" class="w-full h-2 bg-neutral-200 rounded-lg appearance-none cursor-pointer">
+                                </div>
+                                
+                                <div>
+                                    <label class="flex justify-between text-sm text-neutral-600">
+                                        <span>奇偶比例</span>
+                                        <span id="odd-even-ratio-value">50%</span>
+                                    </label>
+                                    <input type="range" id="odd-even-ratio" min="0" max="100" value="50" class="w-full h-2 bg-neutral-200 rounded-lg appearance-none cursor-pointer">
+                                </div>
+                                
+                                <div>
+                                    <label class="flex justify-between text-sm text-neutral-600">
+                                        <span>大小比例</span>
+                                        <span id="big-small-ratio-value">50%</span>
+                                    </label>
+                                    <input type="range" id="big-small-ratio" min="0" max="100" value="50" class="w-full h-2 bg-neutral-200 rounded-lg appearance-none cursor-pointer">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <button id="generate-recommendation" class="w-full py-3 bg-secondary text-white rounded-lg hover:bg-secondary/90 transition-colors duration-300 flex items-center justify-center">
+                            <i class="fa fa-refresh mr-2"></i> 生成AI推荐
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- AI推荐结果 -->
+                <div class="lg:col-span-2">
+                    <div class="bg-white rounded-xl shadow-lg p-6 h-full">
+                        <div class="flex justify-between items-center mb-6">
+                            <h4 class="text-lg font-semibold text-primary">AI推荐号码</h4>
+                            <div class="text-sm text-neutral-500">
+                                基于历史<span id="algorithm-name">热冷号平衡</span>算法
+                            </div>
+                        </div>
+                        
+                        <div id="recommendation-results" class="space-y-6">
+                            <!-- AI推荐结果将通过JavaScript动态生成 -->
+                            <div class="text-center text-neutral-500 py-12">
+                                <i class="fa fa-magic text-4xl mb-4 block"></i>
+                                <p>点击"生成AI推荐"按钮获取号码推荐</p>
+                            </div>
+                        </div>
+                        
+                        <div class="mt-8 pt-6 border-t border-neutral-200">
+                            <div class="flex flex-wrap gap-4 justify-center">
+                                <button id="save-recommendation" class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors duration-300 flex items-center">
+                                    <i class="fa fa-save mr-2"></i> 保存到我的记录
+                                </button>
+                                <button id="copy-recommendation" class="px-4 py-2 bg-neutral-200 text-neutral-700 rounded-lg hover:bg-neutral-300 transition-colors duration-300 flex items-center">
+                                    <i class="fa fa-copy mr-2"></i> 复制号码
+                                </button>
+                                <button id="share-recommendation" class="px-4 py-2 bg-neutral-200 text-neutral-700 rounded-lg hover:bg-neutral-300 transition-colors duration-300 flex items-center">
+                                    <i class="fa fa-share-alt mr-2"></i> 分享
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 自选号码区域 -->
+        <section class="mb-12">
+            <h3 class="text-2xl font-bold text-primary mb-6 flex items-center">
+                <i class="fa fa-pencil text-secondary mr-2"></i>
+                自选号码
+            </h3>
+            
+            <div class="bg-white rounded-xl shadow-lg p-6">
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    <!-- 红球选择 -->
+                    <div class="lg:col-span-2">
+                        <h4 class="text-lg font-semibold text-primary mb-4">红球选择 (选择6个)</h4>
+                        <div class="grid grid-cols-5 sm:grid-cols-6 md:grid-cols-11 gap-3 mb-6">
+                            <!-- 红球号码将通过JavaScript动态生成 -->
+                        </div>
+                    </div>
+                    
+                    <!-- 蓝球选择 -->
+                    <div class="lg:col-span-1">
+                        <h4 class="text-lg font-semibold text-primary mb-4">蓝球选择 (选择1个)</h4>
+                        <div class="grid grid-cols-4 sm:grid-cols-8 gap-3">
+                            <!-- 蓝球号码将通过JavaScript动态生成 -->
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mt-8 pt-6 border-t border-neutral-200">
+                    <div class="flex flex-wrap gap-4 justify-center">
+                        <button id="random-select" class="px-4 py-2 bg-neutral-200 text-neutral-700 rounded-lg hover:bg-neutral-300 transition-colors duration-300 flex items-center">
+                            <i class="fa fa-random mr-2"></i> 机选号码
+                        </button>
+                        <button id="clear-selection" class="px-4 py-2 bg-neutral-200 text-neutral-700 rounded-lg hover:bg-neutral-300 transition-colors duration-300 flex items-center">
+                            <i class="fa fa-times mr-2"></i> 清空选择
+                        </button>
+                        <button id="save-selection" class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors duration-300 flex items-center">
+                            <i class="fa fa-save mr-2"></i> 保存到我的记录
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 我的记录区域 -->
+        <section id="my-records" class="mb-12 scroll-mt-20">
+            <h3 class="text-2xl font-bold text-primary mb-6 flex items-center">
+                <i class="fa fa-history text-secondary mr-2"></i>
+                我的记录
+            </h3>
+            
+            <div class="bg-white rounded-xl shadow-lg overflow-hidden">
+                <div class="p-4 bg-primary text-white flex justify-between items-center">
+                    <h4 class="font-semibold">已保存的号码组合</h4>
+                    <div>
+                        <button id="clear-records" class="bg-white/20 text-white px-3 py-1 rounded-md text-sm hover:bg-white/30 transition-colors duration-300 flex items-center">
+                            <i class="fa fa-trash mr-1"></i> 清空记录
+                        </button>
+                    </div>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left">
+                        <thead class="bg-neutral-100">
+                            <tr>
+                                <th class="p-3">保存时间</th>
+                                <th class="p-3">类型</th>
+                                <th class="p-3">红球号码</th>
+                                <th class="p-3">蓝球号码</th>
+                                <th class="p-3">操作</th>
+                            </tr>
+                        </thead>
+                        <tbody id="records-table-body">
+                            <!-- 记录数据将通过JavaScript动态生成 -->
+                            <tr>
+                                <td colspan="5" class="p-8 text-center text-neutral-500">
+                                    暂无保存的记录
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- 页脚 -->
+    <footer class="bg-primary text-white py-8">
+        <div class="container mx-auto px-4">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <div>
+                    <h4 class="text-lg font-semibold mb-4">关于我们</h4>
+                    <p class="text-sm text-white/80">
+                        双色球AI推荐是一款智能彩票选号助手，旨在通过数据分析为用户提供科学的号码推荐，增强购彩体验和乐趣。
+                    </p>
+                </div>
+                <div>
+                    <h4 class="text-lg font-semibold mb-4">免责声明</h4>
+                    <p class="text-sm text-white/80">
+                        本应用仅提供参考，不保证中奖。彩票是一种娱乐方式，请理性购彩，量力而行。未成年人请勿购买彩票。
+                    </p>
+                </div>
+                <div>
+                    <h4 class="text-lg font-semibold mb-4">联系我们</h4>
+                    <div class="flex space-x-4">
+                        <a href="#" class="text-white/80 hover:text-secondary transition-colors duration-300">
+                            <i class="fa fa-weixin text-2xl"></i>
+                        </a>
+                        <a href="#" class="text-white/80 hover:text-secondary transition-colors duration-300">
+                            <i class="fa fa-weibo text-2xl"></i>
+                        </a>
+                        <a href="#" class="text-white/80 hover:text-secondary transition-colors duration-300">
+                            <i class="fa fa-envelope text-2xl"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+            <div class="mt-8 pt-6 border-t border-white/20 text-center text-sm text-white/60">
+                <p>© 2026 双色球AI推荐 - 智能彩票选号助手</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- 分享模态框 -->
+    <div id="share-modal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-xl shadow-xl p-6 max-w-md w-full mx-4">
+            <div class="flex justify-between items-center mb-4">
+                <h4 class="text-lg font-semibold text-primary">分享推荐号码</h4>
+                <button id="close-share-modal" class="text-neutral-500 hover:text-neutral-700">
+                    <i class="fa fa-times"></i>
+                </button>
+            </div>
+            <div class="mb-6">
+                <p class="text-neutral-600 mb-4">选择分享方式：</p>
+                <div class="grid grid-cols-4 gap-4">
+                    <button class="flex flex-col items-center justify-center p-3 border border-neutral-200 rounded-lg hover:bg-neutral-50 transition-colors duration-300">
+                        <i class="fa fa-weixin text-green-500 text-2xl mb-2"></i>
+                        <span class="text-sm">微信</span>
+                    </button>
+                    <button class="flex flex-col items-center justify-center p-3 border border-neutral-200 rounded-lg hover:bg-neutral-50 transition-colors duration-300">
+                        <i class="fa fa-weibo text-red-500 text-2xl mb-2"></i>
+                        <span class="text-sm">微博</span>
+                    </button>
+                    <button class="flex flex-col items-center justify-center p-3 border border-neutral-200 rounded-lg hover:bg-neutral-50 transition-colors duration-300">
+                        <i class="fa fa-qq text-blue-500 text-2xl mb-2"></i>
+                        <span class="text-sm">QQ</span>
+                    </button>
+                    <button class="flex flex-col items-center justify-center p-3 border border-neutral-200 rounded-lg hover:bg-neutral-50 transition-colors duration-300">
+                        <i class="fa fa-link text-neutral-700 text-2xl mb-2"></i>
+                        <span class="text-sm">复制链接</span>
+                    </button>
+                </div>
+            </div>
+            <div class="text-center">
+                <button id="cancel-share" class="px-4 py-2 bg-neutral-200 text-neutral-700 rounded-lg hover:bg-neutral-300 transition-colors duration-300">
+                    取消
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 通知提示 -->
+    <div id="notification" class="fixed bottom-4 right-4 bg-white rounded-lg shadow-lg p-4 max-w-sm transform translate-y-20 opacity-0 transition-all duration-300 z-50">
+        <div class="flex items-start">
+            <div id="notification-icon" class="mr-3 text-primary">
+                <i class="fa fa-check-circle text-xl"></i>
+            </div>
+            <div class="flex-1">
+                <h4 id="notification-title" class="font-semibold text-neutral-800">操作成功</h4>
+                <p id="notification-message" class="text-sm text-neutral-600 mt-1">您的操作已成功完成。</p>
+            </div>
+            <button id="close-notification" class="text-neutral-400 hover:text-neutral-600">
+                <i class="fa fa-times"></i>
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // 模拟历史开奖数据
+        const historicalData = [
+            { period: '2026052', date: '2026-05-01', redBalls: [7, 10, 16, 22, 26, 31], blueBall: 6, sales: 372546890, prizePool: 1856723450 },
+            { period: '2026051', date: '2026-04-28', redBalls: [3, 9, 12, 17, 25, 32], blueBall: 12, sales: 368924570, prizePool: 1824567890 },
+            { period: '2026050', date: '2026-04-26', redBalls: [2, 8, 15, 20, 28, 33], blueBall: 5, sales: 375689230, prizePool: 1798765430 },
+            { period: '2026049', date: '2026-04-24', redBalls: [5, 11, 18, 23, 27, 30], blueBall: 9, sales: 362345670, prizePool: 1765432100 },
+            { period: '2026048', date: '2026-04-21', redBalls: [1, 6, 14, 19, 24, 29], blueBall: 3, sales: 358923450, prizePool: 1732109870 },
+            { period: '2026047', date: '2026-04-19', redBalls: [4, 10, 13, 21, 26, 31], blueBall: 8, sales: 365432100, prizePool: 1698765430 },
+            { period: '2026046', date: '2026-04-17', redBalls: [2, 7, 15, 22, 28, 33], blueBall: 11, sales: 370987650, prizePool: 1665432100 },
+            { period: '2026045', date: '2026-04-14', redBalls: [5, 9, 16, 23, 27, 30], blueBall: 4, sales: 356789010, prizePool: 1632109870 },
+            { period: '2026044', date: '2026-04-12', redBalls: [1, 8, 14, 20, 25, 32], blueBall: 7, sales: 363456780, prizePool: 1598765430 },
+            { period: '2026043', date: '2026-04-10', redBalls: [3, 6, 13, 19, 24, 29], blueBall: 2, sales: 359876540, prizePool: 1565432100 }
+        ];
+
+        // 模拟号码频率数据（基于历史数据统计）
+        const frequencyData = [
+            { number: 1, count: 2 },
+            { number: 2, count: 2 },
+            { number: 3, count: 2 },
+            { number: 4, count: 1 },
+            { number: 5, count: 2 },
+            { number: 6, count: 2 },
+            { number: 7, count: 2 },
+            { number: 8, count: 2 },
+            { number: 9, count: 2 },
+            { number: 10, count: 2 },
+            { number: 11, count: 1 },
+            { number: 12, count: 1 },
+            { number: 13, count: 2 },
+            { number: 14, count: 2 },
+            { number: 15, count: 2 },
+            { number: 16, count: 2 },
+            { number: 17, count: 1 },
+            { number: 18, count: 1 },
+            { number: 19, count: 2 },
+            { number: 20, count: 2 },
+            { number: 21, count: 1 },
+            { number: 22, count: 2 },
+            { number: 23, count: 2 },
+            { number: 24, count: 2 },
+            { number: 25, count: 2 },
+            { number: 26, count: 2 },
+            { number: 27, count: 2 },
+            { number: 28, count: 2 },
+            { number: 29, count: 2 },
+            { number: 30, count: 2 },
+            { number: 31, count: 2 },
+            { number: 32, count: 2 },
+            { number: 33, count: 2 }
+        ];
+
+        // 模拟蓝球频率数据
+        const blueBallFrequency = [
+            { number: 1, count: 0 },
+            { number: 2, count: 1 },
+            { number: 3, count: 1 },
+            { number: 4, count: 1 },
+            { number: 5, count: 1 },
+            { number: 6, count: 1 },
+            { number: 7, count: 1 },
+            { number: 8, count: 1 },
+            { number: 9, count: 1 },
+            { number: 10, count: 0 },
+            { number: 11, count: 1 },
+            { number: 12, count: 1 },
+            { number: 13, count: 0 },
+            { number: 14, count: 0 },
+            { number: 15, count: 0 },
+            { number: 16, count: 0 }
+        ];
+
+        // 全局变量
+        let dataChart = null;
+        let selectedRedBalls = [];
+        let selectedBlueBall = null;
+        let recommendationResults = [];
+        let userRecords = JSON.parse(localStorage.getItem('ssq-records')) || [];
+
+        // DOM加载完成后执行
+        document.addEventListener('DOMContentLoaded', function() {
+            // 初始化移动端菜单
+            initMobileMenu();
+            
+            // 初始化历史数据表格
+            initHistoryTable();
+            
+            // 初始化图表
+            initChart();
+            
+            // 初始化号码选择器
+            initNumberSelector();
+            
+            // 初始化推荐设置
+            initRecommendationSettings();
+            
+            // 初始化我的记录
+            initRecords();
+            
+            // 初始化事件监听
+            initEventListeners();
+        });
+
+        // 初始化移动端菜单
+        function initMobileMenu() {
+            const menuButton = document.getElementById('mobile-menu-button');
+            const mobileMenu = document.getElementById('mobile-menu');
+            
+            menuButton.addEventListener('click', function() {
+                mobileMenu.classList.toggle('hidden');
+            });
+        }
+
+        // 初始化历史数据表格
+        function initHistoryTable() {
+            const tableBody = document.getElementById('history-table-body');
+            tableBody.innerHTML = '';
+            
+            historicalData.forEach(data => {
+                const row = document.createElement('tr');
+                row.className = 'border-b border-neutral-100 hover:bg-neutral-50 transition-colors duration-300';
+                
+                // 红球号码格式化
+                const redBallsFormatted = data.redBalls.map(ball => ball.toString().padStart(2, '0')).join(', ');
+                
+                row.innerHTML = `
+                    <td class="p-3">${data.period}</td>
+                    <td class="p-3">${data.date}</td>
+                    <td class="p-3">
+                        <div class="flex flex-wrap gap-1">
+                            ${data.redBalls.map(ball => `
+                                <span class="inline-block w-6 h-6 rounded-full bg-red-500 text-white text-xs flex items-center justify-center">
+                                    ${ball.toString().padStart(2, '0')}
+                                </span>
+                            `).join('')}
+                        </div>
+                    </td>
+                    <td class="p-3">
+                        <span class="inline-block w-6 h-6 rounded-full bg-blue-500 text-white text-xs flex items-center justify-center">
+                            ${data.blueBall.toString().padStart(2, '0')}
+                        </span>
+                    </td>
+                    <td class="p-3">${data.sales.toLocaleString()}</td>
+                    <td class="p-3">${data.prizePool.toLocaleString()}</td>
+                `;
+                
+                tableBody.appendChild(row);
+            });
+        }
+
+        // 初始化图表
+        function initChart() {
+            const ctx = document.getElementById('data-chart').getContext('2d');
+            
+            // 创建号码频率图表
+            dataChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: frequencyData.map(item => item.number.toString().padStart(2, '0')),
+                    datasets: [{
+                        label: '出现次数',
+                        data: frequencyData.map(item => item.count),
+                        backgroundColor: function(context) {
+                            const value = context.dataset.data[context.dataIndex];
+                            const max = Math.max(...context.dataset.data);
+                            const intensity = value / max;
+                            return `rgba(239, 68, 68, ${0.5 + intensity * 0.5})`;
+                        },
+                        borderColor: 'rgba(239, 68, 68, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            callbacks: {
+                                title: function(context) {
+                                    return `号码 ${context[0].label}`;
+                                },
+                                label: function(context) {
+                                    return `出现次数: ${context.raw}`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                stepSize: 1
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // 更新图表
+        function updateChart(chartType) {
+            // 销毁现有图表
+            if (dataChart) {
+                dataChart.destroy();
+            }
+            
+            const ctx = document.getElementById('data-chart').getContext('2d');
+            
+            switch (chartType) {
+                case 'frequency':
+                    // 号码出现频率图表
+                    dataChart = new Chart(ctx, {
+                        type: 'bar',
+                        data: {
+                            labels: frequencyData.map(item => item.number.toString().padStart(2, '0')),
+                            datasets: [{
+                                label: '出现次数',
+                                data: frequencyData.map(item => item.count),
+                                backgroundColor: function(context) {
+                                    const value = context.dataset.data[context.dataIndex];
+                                    const max = Math.max(...context.dataset.data);
+                                    const intensity = value / max;
+                                    return `rgba(239, 68, 68, ${0.5 + intensity * 0.5})`;
+                                },
+                                borderColor: 'rgba(239, 68, 68, 1)',
+                                borderWidth: 1
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: {
+                                    display: false
+                                },
+                                tooltip: {
+                                    callbacks: {
+                                        title: function(context) {
+                                            return `号码 ${context[0].label}`;
+                                        },
+                                        label: function(context) {
+                                            return `出现次数: ${context.raw}`;
+                                        }
+                                    }
+                                }
+                            },
+                            scales: {
+                                y: {
+                                    beginAtZero: true,
+                                    ticks: {
+                                        stepSize: 1
+                                    }
+                                }
+                            }
+                        }
+                    });
+                    break;
+                    
+                case 'heatmap':
+                    // 热号冷号分布图
+                    const heatmapData = frequencyData.map(item => {
+                        const max = Math.max(...frequencyData.map(d => d.count));
+                        const min = Math.min(...frequencyData.map(d => d.count));
+                        const range = max - min;
+                        // 将频率映射到0-100的热度值
+                        const heatValue = range > 0 ? ((item.count - min) / range) * 100 : 50;
+                        return {
+                            number: item.number,
+                            heat: heatValue
+                        };
+                    });
+                    
+                    dataChart = new Chart(ctx, {
+                        type: 'scatter',
+                        data: {
+                            datasets: [{
+                                label: '热度值',
+                                data: heatmapData.map(item => ({
+                                    x: item.number,
+                                    y: 1,
+                                    heat: item.heat
+                                })),
+                                backgroundColor: function(context) {
+                                    const heat = context.raw.heat;
+                                    // 根据热度值生成颜色（从蓝色-绿色-黄色-红色）
+                                    if (heat < 25) {
+                                        return 'rgba(59, 130, 246, 0.8)'; // 冷色 - 蓝色
+                                    } else if (heat < 50) {
+                                        return 'rgba(16, 185, 129, 0.8)'; // 绿色
+                                    } else if (heat < 75) {
+                                        return 'rgba(245, 158, 11, 0.8)'; // 黄色
+                                    } else {
+                                        return 'rgba(239, 68, 68, 0.8)'; // 热色 - 红色
+                                    }
+                                },
+                                pointRadius: 15,
+                                pointHoverRadius: 18
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: {
+                                    display: false
+                                },
+                                tooltip: {
+                                    callbacks: {
+                                        title: function(context) {
+                                            return `号码 ${context[0].raw.x.toString().padStart(2, '0')}`;
+                                        },
+                                        label: function(context) {
+                                            const heat = context.raw.heat.toFixed(0);
+                                            let status = '中性';
+                                            if (heat < 25) status = '冷号';
+                                            else if (heat < 75) status = '温号';
+                                            else status = '热号';
+                                            
+                                            return [`热度值: ${heat}%`, `状态: ${status}`];
+                                        }
+                                    }
+                                }
+                            },
+                            scales: {
+                                x: {
+                                    type: 'linear',
+                                    position: 'bottom',
+                                    min: 0,
+                                    max: 34,
+                                    ticks: {
+                                        stepSize: 1,
+                                        callback: function(value) {
+                                            return value >= 1 && value <= 33 ? value.toString().padStart(2, '0') : '';
+                                        }
+                                    },
+                                    grid: {
+                                        display: true,
+                                        color: 'rgba(0, 0, 0, 0.05)'
+                                    }
+                                },
+                                y: {
+                                    display: false,
+                                    min: 0,
+                                    max: 2
+                                }
+                            }
+                        }
+                    });
+                    break;
+                    
+                case 'odd-even':
+                    // 奇偶分布图
+                    const oddEvenData = {
+                        odd: frequencyData.filter(item => item.number % 2 === 1).reduce((sum, item) => sum + item.count, 0),
+                        even: frequencyData.filter(item => item.number % 2 === 0).reduce((sum, item) => sum + item.count, 0)
+                    };
+                    
+                    dataChart = new Chart(ctx, {
+                        type: 'pie',
+                        data: {
+                            labels: ['奇数', '偶数'],
+                            datasets: [{
+                                data: [oddEvenData.odd, oddEvenData.even],
+                                backgroundColor: [
+                                    'rgba(239, 68, 68, 0.8)',
+                                    'rgba(59, 130, 246, 0.8)'
+                                ],
+                                borderColor: [
+                                    'rgba(239, 68, 68, 1)',
+                                    'rgba(59, 130, 246, 1)'
+                                ],
+                                borderWidth: 1
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: {
+                                    position: 'bottom'
+                                },
+                                tooltip: {
+                                    callbacks: {
+                                        label: function(context) {
+                                            const value = context.raw;
+                                            const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                            const percentage = ((value / total) * 100).toFixed(1);
+                                            return `${context.label}: ${value} (${percentage}%)`;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    });
+                    break;
+                    
+                case 'zone':
+                    // 区间分布图
+                    const zoneData = {
+                        zone1: frequencyData.filter(item => item.number >= 1 && item.number <= 11).reduce((sum, item) => sum + item.count, 0),
+                        zone2: frequencyData.filter(item => item.number >= 12 && item.number <= 22).reduce((sum, item) => sum + item.count, 0),
+                        zone3: frequencyData.filter(item => item.number >= 23 && item.number <= 33).reduce((sum, item) => sum + item.count, 0)
+                    };
+                    
+                    dataChart = new Chart(ctx, {
+                        type: 'doughnut',
+                        data: {
+                            labels: ['小区 (01-11)', '中区 (12-22)', '大区 (23-33)'],
+                            datasets: [{
+                                data: [zoneData.zone1, zoneData.zone2, zoneData.zone3],
+                                backgroundColor: [
+                                    'rgba(59, 130, 246, 0.8)',
+                                    'rgba(16, 185, 129, 0.8)',
+                                    'rgba(239, 68, 68, 0.8)'
+                                ],
+                                borderColor: [
+                                    'rgba(59, 130, 246, 1)',
+                                    'rgba(16, 185, 129, 1)',
+                                    'rgba(239, 68, 68, 1)'
+                                ],
+                                borderWidth: 1
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: {
+                                    position: 'bottom'
+                                },
+                                tooltip: {
+                                    callbacks: {
+                                        label: function(context) {
+                                            const value = context.raw;
+                                            const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                            const percentage = ((value / total) * 100).toFixed(1);
+                                            return `${context.label}: ${value} (${percentage}%)`;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    });
+                    break;
+            }
+        }
+
+        // 初始化号码选择器
+        function initNumberSelector() {
+            // 红球选择器
+            const redBallsContainer = document.querySelector('.grid-cols-5.sm\\:grid-cols-6.md\\:grid-cols-11');
+            redBallsContainer.innerHTML = '';
+            
+            for (let i = 1; i <= 33; i++) {
+                const ball = document.createElement('div');
+                ball.className = 'number-ball number-ball-red w-10 h-10 text-sm number-ball-hover';
+                ball.textContent = i.toString().padStart(2, '0');
+                ball.dataset.number = i;
+                
+                ball.addEventListener('click', function() {
+                    const number = parseInt(this.dataset.number);
+                    
+                    // 如果已选中，则取消选择
+                    if (selectedRedBalls.includes(number)) {
+                        selectedRedBalls = selectedRedBalls.filter(n => n !== number);
+                        this.classList.remove('number-ball-selected');
+                    } 
+                    // 如果未选中且未达到6个，则选择
+                    else if (selectedRedBalls.length < 6) {
+                        selectedRedBalls.push(number);
+                        selectedRedBalls.sort((a, b) => a - b);
+                        this.classList.add('number-ball-selected');
+                    }
+                    
+                    updateSelectionDisplay();
+                });
+                
+                redBallsContainer.appendChild(ball);
+            }
+            
+            // 蓝球选择器
+            const blueBallsContainer = document.querySelector('.grid-cols-4.sm\\:grid-cols-8');
+            blueBallsContainer.innerHTML = '';
+            
+            for (let i = 1; i <= 16; i++) {
+                const ball = document.createElement('div');
+                ball.className = 'number-ball number-ball-blue w-10 h-10 text-sm number-ball-hover';
+                ball.textContent = i.toString().padStart(2, '0');
+                ball.dataset.number = i;
+                
+                ball.addEventListener('click', function() {
+                    const number = parseInt(this.dataset.number);
+                    
+                    // 如果已选中，则取消选择
+                    if (selectedBlueBall === number) {
+                        selectedBlueBall = null;
+                        this.classList.remove('number-ball-selected');
+                    } 
+                    // 否则选择该号码
+                    else {
+                        // 如果之前已选中其他蓝球，先取消选中状态
+                        if (selectedBlueBall !== null) {
+                            const prevSelected = document.querySelector(`.number-ball-blue[data-number="${selectedBlueBall}"]`);
+                            if (prevSelected) {
+                                prevSelected.classList.remove('number-ball-selected');
+                            }
+                        }
+                        
+                        selectedBlueBall = number;
+                        this.classList.add('number-ball-selected');
+                    }
+                    
+                    updateSelectionDisplay();
+                });
+                
+                blueBallsContainer.appendChild(ball);
+            }
+        }
+
+        // 更新选择显示
+        function updateSelectionDisplay() {
+            // 更新红球选择状态
+            document.querySelectorAll('.number-ball-red').forEach(ball => {
+                const number = parseInt(ball.dataset.number);
+                if (selectedRedBalls.includes(number)) {
+                    ball.classList.add('number-ball-selected');
+                } else {
+                    ball.classList.remove('number-ball-selected');
+                }
+            });
+            
+            // 更新蓝球选择状态
+            document.querySelectorAll('.number-ball-blue').forEach(ball => {
+                const number = parseInt(ball.dataset.number);
+                if (selectedBlueBall === number) {
+                    ball.classList.add('number-ball-selected');
+                } else {
+                    ball.classList.remove('number-ball-selected');
+                }
+            });
+        }
+
+        // 初始化推荐设置
+        function initRecommendationSettings() {
+            // 推荐注数增减按钮
+            const decreaseBtn = document.getElementById('decrease-amount');
+            const increaseBtn = document.getElementById('increase-amount');
+            const amountInput = document.getElementById('recommendation-amount');
+            
+            decreaseBtn.addEventListener('click', function() {
+                const currentValue = parseInt(amountInput.value);
+                if (currentValue > 1) {
+                    amountInput.value = currentValue - 1;
+                }
+            });
+            
+            increaseBtn.addEventListener('click', function() {
+                const currentValue = parseInt(amountInput.value);
+                if (currentValue < 10) {
+                    amountInput.value = currentValue + 1;
+                }
+            });
+            
+            // 滑块值显示
+            const hotRatioSlider = document.getElementById('hot-ratio');
+            const hotRatioValue = document.getElementById('hot-ratio-value');
+            const oddEvenRatioSlider = document.getElementById('odd-even-ratio');
+            const oddEvenRatioValue = document.getElementById('odd-even-ratio-value');
+            const bigSmallRatioSlider = document.getElementById('big-small-ratio');
+            const bigSmallRatioValue = document.getElementById('big-small-ratio-value');
+            
+            hotRatioSlider.addEventListener('input', function() {
+                hotRatioValue.textContent = `${this.value}%`;
+            });
+            
+            oddEvenRatioSlider.addEventListener('input', function() {
+                oddEvenRatioValue.textContent = `${this.value}%`;
+            });
+            
+            bigSmallRatioSlider.addEventListener('input', function() {
+                bigSmallRatioValue.textContent = `${this.value}%`;
+            });
+            
+            // 算法选择
+            const algorithmSelect = document.getElementById('algorithm-select');
+            const algorithmName = document.getElementById('algorithm-name');
+            
+            algorithmSelect.addEventListener('change', function() {
+                algorithmName.textContent = this.options[this.selectedIndex].text;
+            });
+        }
+
+        // 初始化我的记录
+        function initRecords() {
+            updateRecordsTable();
+        }
+
+        // 更新记录表格
+        function updateRecordsTable() {
+            const tableBody = document.getElementById('records-table-body');
+            tableBody.innerHTML = '';
+            
+            if (userRecords.length === 0) {
+                const emptyRow = document.createElement('tr');
+                emptyRow.innerHTML = `
+                    <td colspan="5" class="p-8 text-center text-neutral-500">
+                        暂无保存的记录
+                    </td>
+                `;
+                tableBody.appendChild(emptyRow);
+                return;
+            }
+            
+            userRecords.forEach((record, index) => {
+                const row = document.createElement('tr');
+                row.className = 'border-b border-neutral-100 hover:bg-neutral-50 transition-colors duration-300';
+                
+                // 红球号码格式化
+                const redBallsFormatted = record.redBalls.map(ball => ball.toString().padStart(2, '0')).join(', ');
+                
+                row.innerHTML = `
+                    <td class="p-3">${record.timestamp}</td>
+                    <td class="p-3">${record.type}</td>
+                    <td class="p-3">
+                        <div class="flex flex-wrap gap-1">
+                            ${record.redBalls.map(ball => `
+                                <span class="inline-block w-6 h-6 rounded-full bg-red-500 text-white text-xs flex items-center justify-center">
+                                    ${ball.toString().padStart(2, '0')}
+                                </span>
+                            `).join('')}
+                        </div>
+                    </td>
+                    <td class="p-3">
+                        <span class="inline-block w-6 h-6 rounded-full bg-blue-500 text-white text-xs flex items-center justify-center">
+                            ${record.blueBall.toString().padStart(2, '0')}
+                        </span>
+                    </td>
+                    <td class="p-3">
+                        <div class="flex space-x-2">
+                            <button class="copy-record text-primary hover:text-primary/80" data-index="${index}">
+                                <i class="fa fa-copy"></i>
+                            </button>
+                            <button class="delete-record text-red-500 hover:text-red-400" data-index="${index}">
+                                <i class="fa fa-trash"></i>
+                            </button>
+                        </div>
+                    </td>
+                `;
+                
+                tableBody.appendChild(row);
+            });
+            
+            // 添加复制和删除事件监听
+            document.querySelectorAll('.copy-record').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const index = parseInt(this.dataset.index);
+                    const record = userRecords[index];
+                    
+                    // 复制到剪贴板
+                    const textToCopy = `红球: ${record.redBalls.map(b => b.toString().padStart(2, '0')).join(', ')} 蓝球: ${record.blueBall.toString().padStart(2, '0')}`;
+                    navigator.clipboard.writeText(textToCopy).then(() => {
+                        showNotification('复制成功', '号码已复制到剪贴板', 'success');
+                    }).catch(err => {
+                        showNotification('复制失败', '请手动复制号码', 'error');
+                    });
+                });
+            });
+            
+            document.querySelectorAll('.delete-record').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const index = parseInt(this.dataset.index);
+                    
+                    // 确认删除
+                    if (confirm('确定要删除这条记录吗？')) {
+                        userRecords.splice(index, 1);
+                        localStorage.setItem('ssq-records', JSON.stringify(userRecords));
+                        updateRecordsTable();
+                        showNotification('删除成功', '记录已删除', 'success');
+                    }
+                });
+            });
+        }
+
+        // 生成AI推荐号码
+        function generateAIRecommendation() {
+            const amount = parseInt(document.getElementById('recommendation-amount').value);
+            const algorithm = document.getElementById('algorithm-select').value;
+            const hotRatio = parseInt(document.getElementById('hot-ratio').value);
+            const oddEvenRatio = parseInt(document.getElementById('odd-even-ratio').value);
+            const bigSmallRatio = parseInt(document.getElementById('big-small-ratio').value);
+            
+            // 清空之前的推荐结果
+            recommendationResults = [];
+            
+            // 根据算法生成推荐号码
+            for (let i = 0; i < amount; i++) {
+                let redBalls = [];
+                let blueBall = null;
+                
+                switch (algorithm) {
+                    case 'hot-cold':
+                        // 热冷号平衡算法
+                        redBalls = generateHotColdBalancedNumbers(hotRatio);
+                        break;
+                        
+                    case 'frequency':
+                        // 频率分析算法
+                        redBalls = generateFrequencyBasedNumbers();
+                        break;
+                        
+                    case 'pattern':
+                        // 模式识别算法
+                        redBalls = generatePatternBasedNumbers();
+                        break;
+                        
+                    case 'comprehensive':
+                        // 综合分析算法
+                        redBalls = generateComprehensiveNumbers(hotRatio, oddEvenRatio, bigSmallRatio);
+                        break;
+                }
+                
+                // 生成蓝球号码
+                blueBall = generateBlueBall();
+                
+                // 添加到推荐结果
+                recommendationResults.push({
+                    redBalls: redBalls,
+                    blueBall: blueBall
+                });
+            }
+            
+            // 显示推荐结果
+            displayRecommendationResults();
+        }
+
+        // 生成热冷号平衡号码
+        function generateHotColdBalancedNumbers(hotRatio) {
+            // 将号码按频率排序
+            const sortedNumbers = [...frequencyData].sort((a, b) => b.count - a.count);
+            
+            // 计算热号和冷号的数量
+            const hotCount = Math.round(6 * hotRatio / 100);
+            const coldCount = 6 - hotCount;
+            
+            // 选择热号
+            const hotNumbers = sortedNumbers.slice(0, 10);
+            const selectedHotNumbers = [];
+            
+            while (selectedHotNumbers.length < hotCount) {
+                const randomIndex = Math.floor(Math.random() * hotNumbers.length);
+                const number = hotNumbers[randomIndex].number;
+                
+                if (!selectedHotNumbers.includes(number)) {
+                    selectedHotNumbers.push(number);
+                }
+            }
+            
+            // 选择冷号
+            const coldNumbers = sortedNumbers.slice(-10);
+            const selectedColdNumbers = [];
+            
+            while (selectedColdNumbers.length < coldCount) {
+                const randomIndex = Math.floor(Math.random() * coldNumbers.length);
+                const number = coldNumbers[randomIndex].number;
+                
+                if (!selectedColdNumbers.includes(number) && !selectedHotNumbers.includes(number)) {
+                    selectedColdNumbers.push(number);
+                }
+            }
+            
+            // 合并并排序
+            const result = [...selectedHotNumbers, ...selectedColdNumbers];
+            result.sort((a, b) => a - b);
+            
+            return result;
+        }
+
+        // 生成频率分析号码
+        function generateFrequencyBasedNumbers() {
+            // 计算每个号码的权重（基于频率）
+            const totalCount = frequencyData.reduce((sum, item) => sum + item.count, 0);
+            const weightedNumbers = frequencyData.map(item => ({
+                number: item.number,
+                weight: item.count / totalCount
+            }));
+            
+            // 根据权重随机选择6个号码
+            const selectedNumbers = [];
+            
+            while (selectedNumbers.length < 6) {
+                const random = Math.random();
+                let cumulativeWeight = 0;
+                
+                for (const item of weightedNumbers) {
+                    cumulativeWeight += item.weight;
+                    
+                    if (random <= cumulativeWeight) {
+                        if (!selectedNumbers.includes(item.number)) {
+                            selectedNumbers.push(item.number);
+                        }
+                        break;
+                    }
+                }
+            }
+            
+            // 排序
+            selectedNumbers.sort((a, b) => a - b);
+            
+            return selectedNumbers;
+        }
+
+        // 生成模式识别号码
+        function generatePatternBasedNumbers() {
+            // 这里模拟模式识别算法，实际应用中可能需要更复杂的模式分析
+            // 简单示例：尝试生成有连号的组合
+            
+            const selectedNumbers = [];
+            
+            // 生成一组基础号码
+            while (selectedNumbers.length < 4) {
+                const number = Math.floor(Math.random() * 33) + 1;
+                if (!selectedNumbers.includes(number)) {
+                    selectedNumbers.push(number);
+                }
+            }
+            
+            // 排序
+            selectedNumbers.sort((a, b) => a - b);
+            
+            // 添加一对连号
+            let consecutiveFound = false;
+            for (let i = 0; i < selectedNumbers.length - 1; i++) {
+                if (selectedNumbers[i + 1] - selectedNumbers[i] === 2) {
+                    // 在两个号码之间插入一个连号
+                    const middleNumber = selectedNumbers[i] + 1;
+                    selectedNumbers.splice(i + 1, 0, middleNumber);
+                    consecutiveFound = true;
+                    break;
+                }
+            }
+            
+            // 如果没有找到合适的位置添加连号，则随机添加两个号码
+            if (!consecutiveFound) {
+                while (selectedNumbers.length < 6) {
+                    const number = Math.floor(Math.random() * 33) + 1;
+                    if (!selectedNumbers.includes(number)) {
+                        selectedNumbers.push(number);
+                    }
+                }
+            } else {
+                // 再添加一个号码
+                while (selectedNumbers.length < 6) {
+                    const number = Math.floor(Math.random() * 33) + 1;
+                    if (!selectedNumbers.includes(number)) {
+                        selectedNumbers.push(number);
+                    }
+                }
+            }
+            
+            // 重新排序
+            selectedNumbers.sort((a, b) => a - b);
+            
+            return selectedNumbers;
+        }
+
+        // 生成综合分析号码
+        function generateComprehensiveNumbers(hotRatio, oddEvenRatio, bigSmallRatio) {
+            // 热冷号平衡
+            const hotCount = Math.round(6 * hotRatio / 100);
+            const coldCount = 6 - hotCount;
+            
+            // 奇偶平衡
+            const oddCount = Math.round(6 * oddEvenRatio / 100);
+            const evenCount = 6 - oddCount;
+            
+            // 大小平衡
+            const bigCount = Math.round(6 * bigSmallRatio / 100);
+            const smallCount = 6 - bigCount;
+            
+            // 将号码按频率排序
+            const sortedNumbers = [...frequencyData].sort((a, b) => b.count - a.count);
+            
+            // 分类号码
+            const hotNumbers = sortedNumbers.slice(0, 15).map(item => item.number);
+            const coldNumbers = sortedNumbers.slice(-15).map(item => item.number);
+            const oddNumbers = Array.from({length: 17}, (_, i) => i * 2 + 1);
+            const evenNumbers = Array.from({length: 16}, (_, i) => i * 2 + 2);
+            const smallNumbers = Array.from({length: 16}, (_, i) => i + 1);
+            const bigNumbers = Array.from({length: 17}, (_, i) => i + 17);
+            
+            // 交集
+            const hotOddSmall = hotNumbers.filter(n => oddNumbers.includes(n) && smallNumbers.includes(n));
+            const hotOddBig = hotNumbers.filter(n => oddNumbers.includes(n) && bigNumbers.includes(n));
+            const hotEvenSmall = hotNumbers.filter(n => evenNumbers.includes(n) && smallNumbers.includes(n));
+            const hotEvenBig = hotNumbers.filter(n => evenNumbers.includes(n) && bigNumbers.includes(n));
+            
+            const coldOddSmall = coldNumbers.filter(n => oddNumbers.includes(n) && smallNumbers.includes(n));
+            const coldOddBig = coldNumbers.filter(n => oddNumbers.includes(n) && bigNumbers.includes(n));
+            const coldEvenSmall = coldNumbers.filter(n => evenNumbers.includes(n) && smallNumbers.includes(n));
+            const coldEvenBig = coldNumbers.filter(n => evenNumbers.includes(n) && bigNumbers.includes(n));
+            
+            // 选择号码
+            const selectedNumbers = [];
+            
+            // 这里简化处理，实际应用中可能需要更复杂的算法
+            // 尝试从各个交集中选择号码，以满足各种比例要求
+            
+            // 先从热号中选择
+            const pools = [hotOddSmall, hotOddBig, hotEvenSmall, hotEvenBig];
+            let currentPoolIndex = 0;
+            
+            while (selectedNumbers.length < hotCount) {
+                const pool = pools[currentPoolIndex];
+                if (pool.length > 0) {
+                    const randomIndex = Math.floor(Math.random() * pool.length);
+                    const number = pool[randomIndex];
+                    
+                    if (!selectedNumbers.includes(number)) {
+                        selectedNumbers.push(number);
+                        // 从所有池中移除已选择的号码
+                        pools.forEach(p => {
+                            const index = p.indexOf(number);
+                            if (index !== -1) p.splice(index, 1);
+                        });
+                    }
+                }
+                
+                currentPoolIndex = (currentPoolIndex + 1) % pools.length;
+            }
+            
+            // 再从冷号中选择
+            const coldPools = [coldOddSmall, coldOddBig, coldEvenSmall, coldEvenBig];
+            currentPoolIndex = 0;
+            
+            while (selectedNumbers.length < 6) {
+                const pool = coldPools[currentPoolIndex];
+                if (pool.length > 0) {
+                    const randomIndex = Math.floor(Math.random() * pool.length);
+                    const number = pool[randomIndex];
+                    
+                    if (!selectedNumbers.includes(number)) {
+                        selectedNumbers.push(number);
+                        // 从所有池中移除已选择的号码
+                        coldPools.forEach(p => {
+                            const index = p.indexOf(number);
+                            if (index !== -1) p.splice(index, 1);
+                        });
+                    }
+                }
+                
+                currentPoolIndex = (currentPoolIndex + 1) % coldPools.length;
+            }
+            
+            // 排序
+            selectedNumbers.sort((a, b) => a - b);
+            
+            return selectedNumbers;
+        }
+
+        // 生成蓝球号码
+        function generateBlueBall() {
+            // 计算每个蓝球的权重（基于频率）
+            const totalCount = blueBallFrequency.reduce((sum, item) => sum + item.count, 0);
+            
+            // 如果没有历史数据，随机选择
+            if (totalCount === 0) {
+                return Math.floor(Math.random() * 16) + 1;
+            }
+            
+            const weightedBalls = blueBallFrequency.map(item => ({
+                number: item.number,
+                weight: item.count / totalCount
+            }));
+            
+            // 根据权重随机选择1个蓝球
+            const random = Math.random();
+            let cumulativeWeight = 0;
+            
+            for (const ball of weightedBalls) {
+                cumulativeWeight += ball.weight;
+                
+                if (random <= cumulativeWeight) {
+                    return ball.number;
+                }
+            }
+            
+            // 如果没有选中（理论上不会发生），返回一个随机蓝球
+            return Math.floor(Math.random() * 16) + 1;
+        }
+
+        // 显示推荐结果
+        function displayRecommendationResults() {
+            const resultsContainer = document.getElementById('recommendation-results');
+            resultsContainer.innerHTML = '';
+            
+            recommendationResults.forEach((result, index) => {
+                const resultDiv = document.createElement('div');
+                resultDiv.className = 'bg-neutral-50 rounded-lg p-4 flex flex-col md:flex-row md:items-center justify-between';
+                
+                resultDiv.innerHTML = `
+                    <div class="flex items-center mb-3 md:mb-0">
+                        <span class="font-semibold text-primary mr-3">推荐 ${index + 1}:</span>
+                        <div class="flex flex-wrap gap-2">
+                            ${result.redBalls.map(ball => `
+                                <div class="number-ball number-ball-red w-10 h-10 text-sm">
+                                    ${ball.toString().padStart(2, '0')}
+                                </div>
+                            `).join('')}
+                            <div class="number-ball number-ball-blue w-10 h-10 text-sm ml-2">
+                                ${result.blueBall.toString().padStart(2, '0')}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="flex space-x-2">
+                        <button class="copy-single-recommendation px-3 py-1 bg-neutral-200 text-neutral-700 rounded-md text-sm hover:bg-neutral-300 transition-colors duration-300 flex items-center" data-index="${index}">
+                            <i class="fa fa-copy mr-1"></i> 复制
+                        </button>
+                        <button class="save-single-recommendation px-3 py-1 bg-primary text-white rounded-md text-sm hover:bg-primary/90 transition-colors duration-300 flex items-center" data-index="${index}">
+                            <i class="fa fa-save mr-1"></i> 保存
+                        </button>
+                    </div>
+                `;
+                
+                resultsContainer.appendChild(resultDiv);
+            });
+            
+            // 添加复制和保存事件监听
+            document.querySelectorAll('.copy-single-recommendation').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const index = parseInt(this.dataset.index);
+                    const result = recommendationResults[index];
+                    
+                    // 复制到剪贴板
+                    const textToCopy = `红球: ${result.redBalls.map(b => b.toString().padStart(2, '0')).join(', ')} 蓝球: ${result.blueBall.toString().padStart(2, '0')}`;
+                    navigator.clipboard.writeText(textToCopy).then(() => {
+                        showNotification('复制成功', '号码已复制到剪贴板', 'success');
+                    }).catch(err => {
+                        showNotification('复制失败', '请手动复制号码', 'error');
+                    });
+                });
+            });
+            
+            document.querySelectorAll('.save-single-recommendation').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const index = parseInt(this.dataset.index);
+                    const result = recommendationResults[index];
+                    
+                    // 保存到本地存储
+                    const timestamp = new Date().toLocaleString();
+                    const record = {
+                        timestamp: timestamp,
+                        type: 'AI推荐',
+                        redBalls: result.redBalls,
+                        blueBall: result.blueBall
+                    };
+                    
+                    userRecords.unshift(record);
+                    localStorage.setItem('ssq-records', JSON.stringify(userRecords));
+                    
+                    // 更新记录表格
+                    updateRecordsTable();
+                    
+                    showNotification('保存成功', '号码已保存到我的记录', 'success');
+                });
+            });
+        }
+
+        // 初始化事件监听
+        function initEventListeners() {
+            // 图表切换
+            document.querySelectorAll('.chart-tab').forEach(tab => {
+                tab.addEventListener('click', function() {
+                    // 移除所有标签的活动状态
+                    document.querySelectorAll('.chart-tab').forEach(t => {
+                        t.classList.remove('active', 'bg-primary', 'text-white');
+                        t.classList.add('bg-neutral-200', 'text-neutral-700');
+                    });
+                    
+                    // 添加当前标签的活动状态
+                    this.classList.add('active', 'bg-primary', 'text-white');
+                    this.classList.remove('bg-neutral-200', 'text-neutral-700');
+                    
+                    // 更新图表
+                    const chartType = this.dataset.chart;
+                    updateChart(chartType);
+                });
+            });
+            
+            // 导出数据按钮
+            document.getElementById('export-data').addEventListener('click', function() {
+                // 创建CSV内容
+                let csvContent = "期号,开奖日期,红球号码,蓝球号码,销售额(元),奖池金额(元)\n";
+                
+                historicalData.forEach(data => {
+                    const redBallsFormatted = data.redBalls.map(ball => ball.toString().padStart(2, '0')).join(' ');
+                    csvContent += `${data.period},${data.date},${redBallsFormatted},${data.blueBall.toString().padStart(2, '0')},${data.sales},${data.prizePool}\n`;
+                });
+                
+                // 创建Blob对象
+                const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+                
+                // 创建下载链接
+                const link = document.createElement('a');
+                const url = URL.createObjectURL(blob);
+                
+                link.setAttribute('href', url);
+                link.setAttribute('download', `双色球历史数据_${new Date().toISOString().split('T')[0]}.csv`);
+                link.style.visibility = 'hidden';
+                
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                
+                showNotification('导出成功', '历史数据已导出为CSV文件', 'success');
+            });
+            
+            // 加载更多按钮
+            document.getElementById('load-more').addEventListener('click', function() {
+                // 模拟加载更多数据
+                showNotification('提示', '已加载全部数据', 'info');
+            });
+            
+            // 生成AI推荐按钮
+            document.getElementById('generate-recommendation').addEventListener('click', function() {
+                // 显示加载状态
+                const button = this;
+                const originalText = button.innerHTML;
+                button.innerHTML = '<i class="fa fa-spinner fa-spin mr-2"></i> 生成中...';
+                button.disabled = true;
+                
+                // 模拟生成延迟
+                setTimeout(() => {
+                    generateAIRecommendation();
+                    button.innerHTML = originalText;
+                    button.disabled = false;
+                }, 1500);
+            });
+            
+            // 保存推荐按钮
+            document.getElementById('save-recommendation').addEventListener('click', function() {
+                if (recommendationResults.length === 0) {
+                    showNotification('保存失败', '请先生成AI推荐号码', 'error');
+                    return;
+                }
+                
+                // 保存所有推荐结果
+                const timestamp = new Date().toLocaleString();
+                
+                recommendationResults.forEach(result => {
+                    const record = {
+                        timestamp: timestamp,
+                        type: 'AI推荐',
+                        redBalls: result.redBalls,
+                        blueBall: result.blueBall
+                    };
+                    
+                    userRecords.unshift(record);
+                });
+                
+                localStorage.setItem('ssq-records', JSON.stringify(userRecords));
+                
+                // 更新记录表格
+                updateRecordsTable();
+                
+                showNotification('保存成功', '推荐号码已保存到我的记录', 'success');
+            });
+            
+            // 复制推荐按钮
+            document.getElementById('copy-recommendation').addEventListener('click', function() {
+                if (recommendationResults.length === 0) {
+                    showNotification('复制失败', '请先生成AI推荐号码', 'error');
+                    return;
+                }
+                
+                // 复制所有推荐结果
+                let textToCopy = 'AI推荐号码：\n';
+                
+                recommendationResults.forEach((result, index) => {
+                    textToCopy += `推荐 ${index + 1}: 红球 ${result.redBalls.map(b => b.toString().padStart(2, '0')).join(', ')} 蓝球 ${result.blueBall.toString().padStart(2, '0')}\n`;
+                });
+                
+                navigator.clipboard.writeText(textToCopy).then(() => {
+                    showNotification('复制成功', '所有推荐号码已复制到剪贴板', 'success');
+                }).catch(err => {
+                    showNotification('复制失败', '请手动复制号码', 'error');
+                });
+            });
+            
+            // 分享推荐按钮
+            document.getElementById('share-recommendation').addEventListener('click', function() {
+                if (recommendationResults.length === 0) {
+                    showNotification('分享失败', '请先生成AI推荐号码', 'error');
+                    return;
+                }
+                
+                // 显示分享模态框
+                document.getElementById('share-modal').classList.remove('hidden');
+            });
+            
+            // 关闭分享模态框
+            document.getElementById('close-share-modal').addEventListener('click', function() {
+                document.getElementById('share-modal').classList.add('hidden');
+            });
+            
+            document.getElementById('cancel-share').addEventListener('click', function() {
+                document.getElementById('share-modal').classList.add('hidden');
+            });
+            
+            // 机选号码按钮
+            document.getElementById('random-select').addEventListener('click', function() {
+                // 随机选择6个红球
+                selectedRedBalls = [];
+                while (selectedRedBalls.length < 6) {
+                    const number = Math.floor(Math.random() * 33) + 1;
+                    if (!selectedRedBalls.includes(number)) {
+                        selectedRedBalls.push(number);
+                    }
+                }
+                selectedRedBalls.sort((a, b) => a - b);
+                
+                // 随机选择1个蓝球
+                selectedBlueBall = Math.floor(Math.random() * 16) + 1;
+                
+                // 更新显示
+                updateSelectionDisplay();
+                
+                showNotification('机选成功', '已随机生成一组号码', 'success');
+            });
+            
+            // 清空选择按钮
+            document.getElementById('clear-selection').addEventListener('click', function() {
+                selectedRedBalls = [];
+                selectedBlueBall = null;
+                updateSelectionDisplay();
+                
+                showNotification('清空成功', '已清空所有选择', 'info');
+            });
+            
+            // 保存自选号码按钮
+            document.getElementById('save-selection').addEventListener('click', function() {
+                if (selectedRedBalls.length !== 6 || selectedBlueBall === null) {
+                    showNotification('保存失败', '请选择6个红球和1个蓝球', 'error');
+                    return;
+                }
+                
+                // 保存到本地存储
+                const timestamp = new Date().toLocaleString();
+                const record = {
+                    timestamp: timestamp,
+                    type: '自选号码',
+                    redBalls: selectedRedBalls,
+                    blueBall: selectedBlueBall
+                };
+                
+                userRecords.unshift(record);
+                localStorage.setItem('ssq-records', JSON.stringify(userRecords));
+                
+                // 更新记录表格
+                updateRecordsTable();
+                
+                showNotification('保存成功', '号码已保存到我的记录', 'success');
+            });
+            
+            // 清空记录按钮
+            document.getElementById('clear-records').addEventListener('click', function() {
+                if (userRecords.length === 0) {
+                    showNotification('提示', '暂无记录可清空', 'info');
+                    return;
+                }
+                
+                if (confirm('确定要清空所有记录吗？此操作不可恢复。')) {
+                    userRecords = [];
+                    localStorage.setItem('ssq-records', JSON.stringify(userRecords));
+                    updateRecordsTable();
+                    
+                    showNotification('清空成功', '所有记录已清空', 'success');
+                }
+            });
+            
+            // 关闭通知
+            document.getElementById('close-notification').addEventListener('click', function() {
+                hideNotification();
+            });
+        }
+
+        // 显示通知
+        function showNotification(title, message, type = 'info') {
+            const notification = document.getElementById('notification');
+            const notificationTitle = document.getElementById('notification-title');
+            const notificationMessage = document.getElementById('notification-message');
+            const notificationIcon = document.getElementById('notification-icon');
+            
+            // 设置通知内容
+            notificationTitle.textContent = title;
+            notificationMessage.textContent = message;
+            
+            // 设置图标和颜色
+            notificationIcon.innerHTML = '';
+            
+            if (type === 'success') {
+                notificationIcon.innerHTML = '<i class="fa fa-check-circle text-xl"></i>';
+                notificationIcon.className = 'mr-3 text-green-500';
+            } else if (type === 'error') {
+                notificationIcon.innerHTML = '<i class="fa fa-times-circle text-xl"></i>';
+                notificationIcon.className = 'mr-3 text-red-500';
+            } else if (type === 'warning') {
+                notificationIcon.innerHTML = '<i class="fa fa-exclamation-triangle text-xl"></i>';
+                notificationIcon.className = 'mr-3 text-yellow-500';
+            } else {
+                notificationIcon.innerHTML = '<i class="fa fa-info-circle text-xl"></i>';
+                notificationIcon.className = 'mr-3 text-primary';
+            }
+            
+            // 显示通知
+            notification.classList.remove('translate-y-20', 'opacity-0');
+            
+            // 3秒后自动隐藏
+            setTimeout(hideNotification, 3000);
+        }
+
+        // 隐藏通知
+        function hideNotification() {
+            const notification = document.getElementById('notification');
+            notification.classList.add('translate-y-20', 'opacity-0');
+        }
+    </script>
+</body>
+</html>

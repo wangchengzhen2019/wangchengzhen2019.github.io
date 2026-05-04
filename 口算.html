@@ -1,0 +1,1463 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>趣味口算练习</title>
+    <!-- Tailwind CSS v3 -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome -->
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <!-- 统一的 Tailwind 配置 -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#3498db',
+                        secondary: '#f39c12',
+                        success: '#2ecc71',
+                        danger: '#e74c3c',
+                        warning: '#f1c40f',
+                        info: '#3498db',
+                        light: '#f8f9fa',
+                        dark: '#343a40'
+                    },
+                    fontFamily: {
+                        sans: ['Arial', 'sans-serif'],
+                    },
+                    animation: {
+                        'bounce-short': 'bounce 0.5s ease-in-out 2',
+                        'pulse-short': 'pulse 1s ease-in-out 2',
+                        'shake': 'shake 0.5s ease-in-out',
+                    },
+                    keyframes: {
+                        shake: {
+                            '0%, 100%': { transform: 'translateX(0)' },
+                            '25%': { transform: 'translateX(-5px)' },
+                            '75%': { transform: 'translateX(5px)' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .text-shadow {
+                text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+            }
+            .card-hover {
+                @apply transition-all duration-300 hover:shadow-lg hover:-translate-y-1;
+            }
+            .btn-primary {
+                @apply bg-primary text-white font-bold py-2 px-4 rounded-lg shadow-md hover:bg-blue-600 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50;
+            }
+            .btn-secondary {
+                @apply bg-secondary text-white font-bold py-2 px-4 rounded-lg shadow-md hover:bg-orange-600 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-opacity-50;
+            }
+            .btn-success {
+                @apply bg-success text-white font-bold py-2 px-4 rounded-lg shadow-md hover:bg-green-600 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-opacity-50;
+            }
+            .btn-danger {
+                @apply bg-danger text-white font-bold py-2 px-4 rounded-lg shadow-md hover:bg-red-600 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-opacity-50;
+            }
+            .input-primary {
+                @apply border-2 border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent;
+            }
+            .badge {
+                @apply inline-block rounded-full px-3 py-1 text-sm font-semibold;
+            }
+            .badge-success {
+                @apply bg-green-100 text-green-800;
+            }
+            .badge-danger {
+                @apply bg-red-100 text-red-800;
+            }
+            .badge-warning {
+                @apply bg-yellow-100 text-yellow-800;
+            }
+            .badge-info {
+                @apply bg-blue-100 text-blue-800;
+            }
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-b from-blue-50 to-orange-50 min-h-screen">
+    <!-- 顶部导航栏 -->
+    <header class="bg-white shadow-md">
+        <div class="container mx-auto px-4 py-3 flex justify-between items-center">
+            <div class="flex items-center space-x-2">
+                <img src="https://p11-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/rc/pc/super_tool/0d85f215f63d44f2878537e760d03c0a~tplv-a9rns2rl98-image.image?lk3s=8e244e95&rcl=2026050420405471C4CCBCA99270498E57&rrcfp=f06b921b&x-expires=1780490486&x-signature=IDcFI2POxFYOcqS%2BWL6pr7eiY5w%3D" alt="Logo" class="w-10 h-10 rounded-full">
+                <h1 class="text-2xl font-bold text-primary">趣味口算练习</h1>
+            </div>
+            <div class="flex items-center space-x-4">
+                <button id="achievementsBtn" class="btn-secondary flex items-center">
+                    <i class="fa fa-trophy mr-2"></i>成就
+                </button>
+                <button id="wrongQuestionsBtn" class="btn-info flex items-center">
+                    <i class="fa fa-exclamation-triangle mr-2"></i>错题本
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- 主内容区 -->
+    <main class="container mx-auto px-4 py-8">
+        <!-- 欢迎页面 -->
+        <section id="welcomeSection" class="max-w-4xl mx-auto bg-white rounded-xl shadow-lg overflow-hidden">
+            <div class="p-8">
+                <h2 class="text-3xl font-bold text-center text-primary mb-6">欢迎来到趣味口算练习</h2>
+                <p class="text-gray-600 text-center mb-8">选择下面的选项，开始你的数学之旅吧！</p>
+                
+                <!-- 设置区域 -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                    <!-- 运算类型 -->
+                    <div class="bg-blue-50 p-6 rounded-lg">
+                        <h3 class="text-xl font-bold text-primary mb-4">运算类型</h3>
+                        <div class="space-y-2">
+                            <label class="flex items-center">
+                                <input type="checkbox" class="operation-type w-5 h-5 text-primary rounded" value="addition" checked>
+                                <span class="ml-2">加法</span>
+                            </label>
+                            <label class="flex items-center">
+                                <input type="checkbox" class="operation-type w-5 h-5 text-primary rounded" value="subtraction" checked>
+                                <span class="ml-2">减法</span>
+                            </label>
+                            <label class="flex items-center">
+                                <input type="checkbox" class="operation-type w-5 h-5 text-primary rounded" value="multiplication">
+                                <span class="ml-2">乘法</span>
+                            </label>
+                            <label class="flex items-center">
+                                <input type="checkbox" class="operation-type w-5 h-5 text-primary rounded" value="division">
+                                <span class="ml-2">除法</span>
+                            </label>
+                            <label class="flex items-center">
+                                <input type="checkbox" class="operation-type w-5 h-5 text-primary rounded" value="mixed">
+                                <span class="ml-2">混合运算</span>
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <!-- 难度级别 -->
+                    <div class="bg-orange-50 p-6 rounded-lg">
+                        <h3 class="text-xl font-bold text-secondary mb-4">难度级别</h3>
+                        <div class="space-y-2">
+                            <label class="flex items-center">
+                                <input type="radio" name="difficulty" class="difficulty-level w-5 h-5 text-secondary" value="easy" checked>
+                                <span class="ml-2">简单</span>
+                            </label>
+                            <label class="flex items-center">
+                                <input type="radio" name="difficulty" class="difficulty-level w-5 h-5 text-secondary" value="medium">
+                                <span class="ml-2">中等</span>
+                            </label>
+                            <label class="flex items-center">
+                                <input type="radio" name="difficulty" class="difficulty-level w-5 h-5 text-secondary" value="hard">
+                                <span class="ml-2">困难</span>
+                            </label>
+                            <label class="flex items-center">
+                                <input type="radio" name="difficulty" class="difficulty-level w-5 h-5 text-secondary" value="auto">
+                                <span class="ml-2">智能调整</span>
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <!-- 数字范围设置 -->
+                    <div class="bg-green-50 p-6 rounded-lg">
+                        <h3 class="text-xl font-bold text-green-600 mb-4">数字范围</h3>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">最大值</label>
+                                <select id="numberRange" class="input-primary w-full">
+                                    <option value="10">10以内</option>
+                                    <option value="20">20以内</option>
+                                    <option value="50" selected>50以内</option>
+                                    <option value="100">100以内</option>
+                                    <option value="1000">1000以内</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">进位设置</label>
+                                <select id="carrySetting" class="input-primary w-full">
+                                    <option value="all">全部题目</option>
+                                    <option value="with">仅进位题</option>
+                                    <option value="without">仅不进位题</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 题目数量和计时设置 -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                    <div class="bg-blue-50 p-6 rounded-lg">
+                        <h3 class="text-xl font-bold text-primary mb-4">题目数量</h3>
+                        <div class="flex items-center">
+                            <button id="decreaseQuestions" class="btn-primary w-10 h-10 flex items-center justify-center">
+                                <i class="fa fa-minus"></i>
+                            </button>
+                            <input type="number" id="questionCount" class="input-primary mx-4 w-full text-center" value="20" min="10" max="100" step="5">
+                            <button id="increaseQuestions" class="btn-primary w-10 h-10 flex items-center justify-center">
+                                <i class="fa fa-plus"></i>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-orange-50 p-6 rounded-lg">
+                        <h3 class="text-xl font-bold text-secondary mb-4">计时设置</h3>
+                        <div class="flex items-center justify-between">
+                            <label class="flex items-center">
+                                <input type="checkbox" id="enableTimer" class="w-5 h-5 text-secondary rounded" checked>
+                                <span class="ml-2">启用计时</span>
+                            </label>
+                            <div id="timerSettings" class="flex items-center">
+                                <span class="mr-2">时间限制:</span>
+                                <select id="timeLimit" class="input-primary">
+                                    <option value="30">30秒</option>
+                                    <option value="60">1分钟</option>
+                                    <option value="120">2分钟</option>
+                                    <option value="180">3分钟</option>
+                                    <option value="300">5分钟</option>
+                                    <option value="0">无限制</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 开始按钮 -->
+                <div class="text-center">
+                    <button id="startPracticeBtn" class="btn-success text-lg px-8 py-3">
+                        <i class="fa fa-play-circle mr-2"></i>开始练习
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- 练习页面 -->
+        <section id="practiceSection" class="max-w-4xl mx-auto bg-white rounded-xl shadow-lg overflow-hidden hidden">
+            <div class="p-6 bg-primary text-white flex justify-between items-center">
+                <div class="flex items-center">
+                    <button id="backToWelcomeBtn" class="mr-4 hover:text-secondary transition-colors">
+                        <i class="fa fa-arrow-left"></i> 返回
+                    </button>
+                    <h2 class="text-xl font-bold">正在练习</h2>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <div class="flex items-center">
+                        <i class="fa fa-clock-o mr-2"></i>
+                        <span id="timerDisplay">00:00</span>
+                    </div>
+                    <div class="flex items-center">
+                        <i class="fa fa-question-circle mr-2"></i>
+                        <span id="questionProgress">1/20</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="p-8">
+                <!-- 题目显示区 -->
+                <div class="text-center mb-8">
+                    <div id="questionContainer" class="text-4xl font-bold mb-6">
+                        7 + 5 = ?
+                    </div>
+                    <div class="flex justify-center">
+                        <input type="number" id="answerInput" class="input-primary text-2xl w-32 text-center" placeholder="答案">
+                    </div>
+                </div>
+                
+                <!-- 操作按钮 -->
+                <div class="flex justify-center space-x-4">
+                    <button id="submitAnswerBtn" class="btn-primary">
+                        <i class="fa fa-check mr-2"></i>提交答案
+                    </button>
+                    <button id="skipQuestionBtn" class="btn-warning text-white">
+                        <i class="fa fa-forward mr-2"></i>跳过此题
+                    </button>
+                </div>
+                
+                <!-- 即时反馈区 -->
+                <div id="feedbackArea" class="mt-6 text-center hidden">
+                    <div id="correctFeedback" class="bg-green-100 text-green-800 p-4 rounded-lg hidden">
+                        <i class="fa fa-check-circle text-2xl text-green-500 mr-2"></i>
+                        <span class="font-bold">回答正确！</span>
+                    </div>
+                    <div id="wrongFeedback" class="bg-red-100 text-red-800 p-4 rounded-lg hidden">
+                        <i class="fa fa-times-circle text-2xl text-red-500 mr-2"></i>
+                        <span class="font-bold">回答错误！</span>
+                        <p class="mt-2">正确答案是: <span id="correctAnswer">12</span></p>
+                    </div>
+                </div>
+                
+                <!-- 进度条 -->
+                <div class="mt-8">
+                    <div class="w-full bg-gray-200 rounded-full h-2.5">
+                        <div id="progressBar" class="bg-primary h-2.5 rounded-full" style="width: 5%"></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 结果页面 -->
+        <section id="resultSection" class="max-w-4xl mx-auto bg-white rounded-xl shadow-lg overflow-hidden hidden">
+            <div class="p-6 bg-secondary text-white">
+                <h2 class="text-xl font-bold text-center">练习完成！</h2>
+            </div>
+            
+            <div class="p-8">
+                <!-- 成绩统计 -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                    <div class="bg-blue-50 p-6 rounded-lg text-center">
+                        <h3 class="text-lg font-bold text-primary mb-2">正确率</h3>
+                        <p id="accuracyRate" class="text-4xl font-bold">85%</p>
+                    </div>
+                    <div class="bg-green-50 p-6 rounded-lg text-center">
+                        <h3 class="text-lg font-bold text-green-600 mb-2">正确题数</h3>
+                        <p id="correctCount" class="text-4xl font-bold">17/20</p>
+                    </div>
+                    <div class="bg-orange-50 p-6 rounded-lg text-center">
+                        <h3 class="text-lg font-bold text-orange-600 mb-2">用时</h3>
+                        <p id="timeSpent" class="text-4xl font-bold">2:30</p>
+                    </div>
+                </div>
+                
+                <!-- 成就展示 -->
+                <div id="achievementEarned" class="bg-yellow-50 p-6 rounded-lg mb-8 text-center hidden">
+                    <h3 class="text-lg font-bold text-yellow-600 mb-4">恭喜获得新成就！</h3>
+                    <div class="flex justify-center mb-4">
+                        <img src="https://p26-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/rc/pc/super_tool/7877d34c1b6042d783a1ee553fb0fb09~tplv-a9rns2rl98-image.image?lk3s=8e244e95&rcl=2026050420405471C4CCBCA99270498E57&rrcfp=f06b921b&x-expires=1780490488&x-signature=gc3XpUYq8aU%2FYDy%2FoLJ6eWcvk8Q%3D" alt="成就徽章" class="w-32 h-32">
+                    </div>
+                    <p id="achievementName" class="text-xl font-bold">数学新星</p>
+                    <p id="achievementDescription" class="text-gray-600">首次完成10题以上的练习</p>
+                </div>
+                
+                <!-- 错题回顾 -->
+                <div id="wrongQuestionsReview" class="mb-8 hidden">
+                    <h3 class="text-lg font-bold text-red-600 mb-4">错题回顾</h3>
+                    <div id="wrongQuestionsList" class="space-y-2 max-h-60 overflow-y-auto">
+                        <!-- 错题将在这里动态生成 -->
+                    </div>
+                </div>
+                
+                <!-- 操作按钮 -->
+                <div class="flex justify-center space-x-4">
+                    <button id="retryBtn" class="btn-primary">
+                        <i class="fa fa-refresh mr-2"></i>再练一次
+                    </button>
+                    <button id="backToSettingsBtn" class="btn-secondary">
+                        <i class="fa fa-cog mr-2"></i>更改设置
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- 成就页面 -->
+        <section id="achievementsSection" class="max-w-4xl mx-auto bg-white rounded-xl shadow-lg overflow-hidden hidden">
+            <div class="p-6 bg-yellow-500 text-white">
+                <div class="flex items-center">
+                    <button id="backFromAchievementsBtn" class="mr-4 hover:text-secondary transition-colors">
+                        <i class="fa fa-arrow-left"></i> 返回
+                    </button>
+                    <h2 class="text-xl font-bold">我的成就</h2>
+                </div>
+            </div>
+            
+            <div class="p-8">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="bg-blue-50 p-6 rounded-lg">
+                        <h3 class="text-lg font-bold text-primary mb-4">已获得成就</h3>
+                        <div id="earnedAchievements" class="space-y-4">
+                            <!-- 已获得的成就将在这里动态生成 -->
+                            <div class="flex items-center bg-white p-3 rounded-lg shadow-sm">
+                                <img src="https://p26-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/rc/pc/super_tool/7877d34c1b6042d783a1ee553fb0fb09~tplv-a9rns2rl98-image.image?lk3s=8e244e95&rcl=2026050420405471C4CCBCA99270498E57&rrcfp=f06b921b&x-expires=1780490488&x-signature=gc3XpUYq8aU%2FYDy%2FoLJ6eWcvk8Q%3D" alt="数学新星" class="w-16 h-16 mr-4">
+                                <div>
+                                    <h4 class="font-bold">数学新星</h4>
+                                    <p class="text-sm text-gray-600">首次完成10题以上的练习</p>
+                                    <p class="text-xs text-gray-500">获得时间: 2023-07-21</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-gray-50 p-6 rounded-lg">
+                        <h3 class="text-lg font-bold text-gray-600 mb-4">待解锁成就</h3>
+                        <div id="lockedAchievements" class="space-y-4">
+                            <!-- 待解锁的成就将在这里动态生成 -->
+                            <div class="flex items-center bg-white p-3 rounded-lg shadow-sm opacity-50">
+                                <div class="w-16 h-16 mr-4 bg-gray-200 rounded-lg flex items-center justify-center">
+                                    <i class="fa fa-lock text-2xl text-gray-400"></i>
+                                </div>
+                                <div>
+                                    <h4 class="font-bold">算术大师</h4>
+                                    <p class="text-sm text-gray-600">正确率达到90%以上</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 错题本页面 -->
+        <section id="wrongQuestionsSection" class="max-w-4xl mx-auto bg-white rounded-xl shadow-lg overflow-hidden hidden">
+            <div class="p-6 bg-red-500 text-white">
+                <div class="flex items-center">
+                    <button id="backFromWrongQuestionsBtn" class="mr-4 hover:text-secondary transition-colors">
+                        <i class="fa fa-arrow-left"></i> 返回
+                    </button>
+                    <h2 class="text-xl font-bold">我的错题本</h2>
+                </div>
+            </div>
+            
+            <div class="p-8">
+                <div id="noWrongQuestions" class="text-center py-8">
+                    <i class="fa fa-check-circle text-5xl text-green-500 mb-4"></i>
+                    <h3 class="text-xl font-bold text-gray-700 mb-2">太棒了！</h3>
+                    <p class="text-gray-600">你还没有错题记录</p>
+                </div>
+                
+                <div id="wrongQuestionsContent" class="hidden">
+                    <div class="flex justify-between items-center mb-6">
+                        <h3 class="text-lg font-bold text-red-600">错题列表</h3>
+                        <button id="clearWrongQuestionsBtn" class="btn-danger text-sm">
+                            <i class="fa fa-trash mr-1"></i>清空错题本
+                        </button>
+                    </div>
+                    
+                    <div id="wrongQuestionsListContainer" class="space-y-4">
+                        <!-- 错题将在这里动态生成 -->
+                        <div class="bg-red-50 p-4 rounded-lg">
+                            <div class="flex justify-between items-center">
+                                <div class="text-xl font-bold">7 + 5 = ?</div>
+                                <div class="badge badge-danger">答错</div>
+                            </div>
+                            <div class="mt-2">
+                                <p>你的答案: <span class="text-red-600 font-bold">11</span></p>
+                                <p>正确答案: <span class="text-green-600 font-bold">12</span></p>
+                            </div>
+                            <div class="mt-2 text-sm text-gray-500">
+                                日期: 2023-07-21 15:30
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-8 text-center">
+                        <button id="practiceWrongQuestionsBtn" class="btn-primary">
+                            <i class="fa fa-refresh mr-2"></i>练习错题
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- 页脚 -->
+    <footer class="bg-gray-800 text-white py-6">
+        <div class="container mx-auto px-4 text-center">
+            <p>趣味口算练习 &copy; 2023</p>
+            <p class="text-sm text-gray-400 mt-2">让数学学习变得有趣！</p>
+        </div>
+    </footer>
+
+    <!-- JavaScript -->
+    <script>
+        // 全局变量
+        let currentQuestions = [];
+        let currentQuestionIndex = 0;
+        let correctAnswers = 0;
+        let wrongAnswers = 0;
+        let skippedQuestions = 0;
+        let startTime = 0;
+        let endTime = 0;
+        let timerInterval = null;
+        let timeLeft = 0;
+        let userSettings = {
+            operations: ['addition', 'subtraction'],
+            difficulty: 'easy',
+            questionCount: 20,
+            enableTimer: true,
+            timeLimit: 180,
+            numberRange: 50,
+            carrySetting: 'all'
+        };
+        let wrongQuestions = JSON.parse(localStorage.getItem('wrongQuestions')) || [];
+        let achievements = JSON.parse(localStorage.getItem('achievements')) || [];
+        
+        // DOM 元素
+        const welcomeSection = document.getElementById('welcomeSection');
+        const practiceSection = document.getElementById('practiceSection');
+        const resultSection = document.getElementById('resultSection');
+        const achievementsSection = document.getElementById('achievementsSection');
+        const wrongQuestionsSection = document.getElementById('wrongQuestionsSection');
+        
+        // 欢迎页面元素
+        const operationTypeCheckboxes = document.querySelectorAll('.operation-type');
+        const difficultyLevelRadios = document.querySelectorAll('.difficulty-level');
+        const questionCountInput = document.getElementById('questionCount');
+        const decreaseQuestionsBtn = document.getElementById('decreaseQuestions');
+        const increaseQuestionsBtn = document.getElementById('increaseQuestions');
+        const enableTimerCheckbox = document.getElementById('enableTimer');
+        const timerSettingsDiv = document.getElementById('timerSettings');
+        const timeLimitSelect = document.getElementById('timeLimit');
+        const numberRangeSelect = document.getElementById('numberRange');
+        const carrySettingSelect = document.getElementById('carrySetting');
+        const startPracticeBtn = document.getElementById('startPracticeBtn');
+        
+        // 练习页面元素
+        const backToWelcomeBtn = document.getElementById('backToWelcomeBtn');
+        const timerDisplay = document.getElementById('timerDisplay');
+        const questionProgress = document.getElementById('questionProgress');
+        const questionContainer = document.getElementById('questionContainer');
+        const answerInput = document.getElementById('answerInput');
+        const submitAnswerBtn = document.getElementById('submitAnswerBtn');
+        const skipQuestionBtn = document.getElementById('skipQuestionBtn');
+        const feedbackArea = document.getElementById('feedbackArea');
+        const correctFeedback = document.getElementById('correctFeedback');
+        const wrongFeedback = document.getElementById('wrongFeedback');
+        const correctAnswerSpan = document.getElementById('correctAnswer');
+        const progressBar = document.getElementById('progressBar');
+        
+        // 结果页面元素
+        const accuracyRateSpan = document.getElementById('accuracyRate');
+        const correctCountSpan = document.getElementById('correctCount');
+        const timeSpentSpan = document.getElementById('timeSpent');
+        const achievementEarnedDiv = document.getElementById('achievementEarned');
+        const achievementNameSpan = document.getElementById('achievementName');
+        const achievementDescriptionSpan = document.getElementById('achievementDescription');
+        const wrongQuestionsReviewDiv = document.getElementById('wrongQuestionsReview');
+        const wrongQuestionsListDiv = document.getElementById('wrongQuestionsList');
+        const retryBtn = document.getElementById('retryBtn');
+        const backToSettingsBtn = document.getElementById('backToSettingsBtn');
+        
+        // 成就页面元素
+        const backFromAchievementsBtn = document.getElementById('backFromAchievementsBtn');
+        const earnedAchievementsDiv = document.getElementById('earnedAchievements');
+        const lockedAchievementsDiv = document.getElementById('lockedAchievements');
+        
+        // 错题本页面元素
+        const backFromWrongQuestionsBtn = document.getElementById('backFromWrongQuestionsBtn');
+        const noWrongQuestionsDiv = document.getElementById('noWrongQuestions');
+        const wrongQuestionsContentDiv = document.getElementById('wrongQuestionsContent');
+        const wrongQuestionsListContainerDiv = document.getElementById('wrongQuestionsListContainer');
+        const clearWrongQuestionsBtn = document.getElementById('clearWrongQuestionsBtn');
+        const practiceWrongQuestionsBtn = document.getElementById('practiceWrongQuestionsBtn');
+        
+        // 导航按钮
+        const achievementsBtn = document.getElementById('achievementsBtn');
+        const wrongQuestionsBtn = document.getElementById('wrongQuestionsBtn');
+        
+        // 初始化页面
+        function init() {
+            // 加载保存的设置
+            loadSettings();
+            
+            // 绑定事件
+            bindEvents();
+            
+            // 更新UI
+            updateSettingsUI();
+            
+            // 检查并更新成就
+            checkAchievements();
+            
+            // 更新错题本UI
+            updateWrongQuestionsUI();
+        }
+        
+        // 加载保存的设置
+        function loadSettings() {
+            const savedSettings = localStorage.getItem('userSettings');
+            if (savedSettings) {
+                userSettings = JSON.parse(savedSettings);
+            }
+        }
+        
+        // 保存设置
+        function saveSettings() {
+            localStorage.setItem('userSettings', JSON.stringify(userSettings));
+        }
+        
+        // 更新设置UI
+        function updateSettingsUI() {
+            // 更新运算类型复选框
+            operationTypeCheckboxes.forEach(checkbox => {
+                checkbox.checked = userSettings.operations.includes(checkbox.value);
+            });
+            
+            // 更新难度级别单选框
+            difficultyLevelRadios.forEach(radio => {
+                radio.checked = radio.value === userSettings.difficulty;
+            });
+            
+            // 更新题目数量
+            questionCountInput.value = userSettings.questionCount;
+            
+            // 更新计时设置
+            enableTimerCheckbox.checked = userSettings.enableTimer;
+            timerSettingsDiv.style.display = userSettings.enableTimer ? 'flex' : 'none';
+            timeLimitSelect.value = userSettings.timeLimit;
+            
+            // 更新数字范围和进位设置
+            numberRangeSelect.value = userSettings.numberRange;
+            carrySettingSelect.value = userSettings.carrySetting;
+        }
+        
+        // 绑定事件
+        function bindEvents() {
+            // 欢迎页面事件
+            decreaseQuestionsBtn.addEventListener('click', () => {
+                const currentValue = parseInt(questionCountInput.value);
+                if (currentValue > 10) {
+                    questionCountInput.value = Math.max(10, currentValue - 5);
+                }
+            });
+            
+            increaseQuestionsBtn.addEventListener('click', () => {
+                const currentValue = parseInt(questionCountInput.value);
+                if (currentValue < 100) {
+                    questionCountInput.value = Math.min(100, currentValue + 5);
+                }
+            });
+            
+            enableTimerCheckbox.addEventListener('change', () => {
+                timerSettingsDiv.style.display = enableTimerCheckbox.checked ? 'flex' : 'none';
+            });
+            
+            startPracticeBtn.addEventListener('click', startPractice);
+            
+            // 练习页面事件
+            backToWelcomeBtn.addEventListener('click', () => {
+                showSection(welcomeSection);
+                stopTimer();
+            });
+            
+            submitAnswerBtn.addEventListener('click', checkAnswer);
+            skipQuestionBtn.addEventListener('click', skipQuestion);
+            
+            answerInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    checkAnswer();
+                }
+            });
+            
+            // 结果页面事件
+            retryBtn.addEventListener('click', startPractice);
+            backToSettingsBtn.addEventListener('click', () => {
+                showSection(welcomeSection);
+            });
+            
+            // 成就页面事件
+            backFromAchievementsBtn.addEventListener('click', () => {
+                showSection(welcomeSection);
+            });
+            
+            // 错题本页面事件
+            backFromWrongQuestionsBtn.addEventListener('click', () => {
+                showSection(welcomeSection);
+            });
+            
+            clearWrongQuestionsBtn.addEventListener('click', clearWrongQuestions);
+            practiceWrongQuestionsBtn.addEventListener('click', practiceWrongQuestions);
+            
+            // 导航按钮事件
+            achievementsBtn.addEventListener('click', () => {
+                showSection(achievementsSection);
+                updateAchievementsUI();
+            });
+            
+            wrongQuestionsBtn.addEventListener('click', () => {
+                showSection(wrongQuestionsSection);
+                updateWrongQuestionsUI();
+            });
+        }
+        
+        // 显示指定的部分，隐藏其他部分
+        function showSection(section) {
+            const sections = [
+                welcomeSection,
+                practiceSection,
+                resultSection,
+                achievementsSection,
+                wrongQuestionsSection
+            ];
+            
+            sections.forEach(s => {
+                s.classList.add('hidden');
+            });
+            
+            section.classList.remove('hidden');
+        }
+        
+        // 收集用户设置
+        function collectUserSettings() {
+            // 收集运算类型
+            userSettings.operations = [];
+            operationTypeCheckboxes.forEach(checkbox => {
+                if (checkbox.checked) {
+                    userSettings.operations.push(checkbox.value);
+                }
+            });
+            
+            // 如果没有选择运算类型，默认选择加减法
+            if (userSettings.operations.length === 0) {
+                userSettings.operations = ['addition', 'subtraction'];
+            }
+            
+            // 收集难度级别
+            difficultyLevelRadios.forEach(radio => {
+                if (radio.checked) {
+                    userSettings.difficulty = radio.value;
+                }
+            });
+            
+            // 收集题目数量
+            userSettings.questionCount = parseInt(questionCountInput.value);
+            
+            // 收集计时设置
+            userSettings.enableTimer = enableTimerCheckbox.checked;
+            userSettings.timeLimit = parseInt(timeLimitSelect.value);
+            
+            // 收集数字范围和进位设置
+            userSettings.numberRange = parseInt(numberRangeSelect.value);
+            userSettings.carrySetting = carrySettingSelect.value;
+            
+            // 保存设置
+            saveSettings();
+        }
+        
+        // 生成题目
+        function generateQuestions() {
+            currentQuestions = [];
+            const { operations, difficulty, questionCount } = userSettings;
+            
+            for (let i = 0; i < questionCount; i++) {
+                // 随机选择运算类型
+                const operation = operations[Math.floor(Math.random() * operations.length)];
+                
+                let question, answer;
+                
+                switch (operation) {
+                    case 'addition':
+                        question = generateAdditionQuestion(difficulty);
+                        break;
+                    case 'subtraction':
+                        question = generateSubtractionQuestion(difficulty);
+                        break;
+                    case 'multiplication':
+                        question = generateMultiplicationQuestion(difficulty);
+                        break;
+                    case 'division':
+                        question = generateDivisionQuestion(difficulty);
+                        break;
+                    case 'mixed':
+                        question = generateMixedQuestion(difficulty);
+                        break;
+                }
+                
+                currentQuestions.push(question);
+            }
+            
+            return currentQuestions;
+        }
+        
+        // 生成加法题目
+        function generateAdditionQuestion(difficulty) {
+            let num1, num2, answer;
+            const { numberRange, carrySetting } = userSettings;
+            let attempts = 0;
+            const maxAttempts = 100;
+            
+            do {
+                switch (difficulty) {
+                    case 'easy':
+                        num1 = Math.floor(Math.random() * Math.min(10, numberRange)) + 1;
+                        num2 = Math.floor(Math.random() * Math.min(10, numberRange)) + 1;
+                        break;
+                    case 'medium':
+                        num1 = Math.floor(Math.random() * Math.min(50, numberRange)) + 1;
+                        num2 = Math.floor(Math.random() * Math.min(50, numberRange)) + 1;
+                        break;
+                    case 'hard':
+                        num1 = Math.floor(Math.random() * numberRange) + 1;
+                        num2 = Math.floor(Math.random() * numberRange) + 1;
+                        break;
+                    default:
+                        num1 = Math.floor(Math.random() * Math.min(10, numberRange)) + 1;
+                        num2 = Math.floor(Math.random() * Math.min(10, numberRange)) + 1;
+                }
+                
+                answer = num1 + num2;
+                attempts++;
+                
+                // 检查是否满足进位设置
+                if (carrySetting === 'all') {
+                    break; // 不限制，任何题目都可以
+                } else if (carrySetting === 'with') {
+                    // 检查是否有进位
+                    if (hasCarry(num1, num2, '+')) {
+                        break;
+                    }
+                } else if (carrySetting === 'without') {
+                    // 检查是否没有进位
+                    if (!hasCarry(num1, num2, '+')) {
+                        break;
+                    }
+                }
+            } while (attempts < maxAttempts);
+            
+            return {
+                question: `${num1} + ${num2} = ?`,
+                answer: answer,
+                operation: 'addition'
+            };
+        }
+        
+        // 生成减法题目
+        function generateSubtractionQuestion(difficulty) {
+            let num1, num2, answer;
+            const { numberRange, carrySetting } = userSettings;
+            let attempts = 0;
+            const maxAttempts = 100;
+            
+            do {
+                switch (difficulty) {
+                    case 'easy':
+                        num1 = Math.floor(Math.random() * Math.min(10, numberRange)) + 1;
+                        num2 = Math.floor(Math.random() * num1) + 1;
+                        break;
+                    case 'medium':
+                        num1 = Math.floor(Math.random() * Math.min(50, numberRange)) + 1;
+                        num2 = Math.floor(Math.random() * num1) + 1;
+                        break;
+                    case 'hard':
+                        num1 = Math.floor(Math.random() * numberRange) + 1;
+                        num2 = Math.floor(Math.random() * num1) + 1;
+                        break;
+                    default:
+                        num1 = Math.floor(Math.random() * Math.min(10, numberRange)) + 1;
+                        num2 = Math.floor(Math.random() * num1) + 1;
+                }
+                
+                answer = num1 - num2;
+                attempts++;
+                
+                // 检查是否满足进位设置
+                if (carrySetting === 'all') {
+                    break; // 不限制，任何题目都可以
+                } else if (carrySetting === 'with') {
+                    // 检查是否有借位
+                    if (hasCarry(num1, num2, '-')) {
+                        break;
+                    }
+                } else if (carrySetting === 'without') {
+                    // 检查是否没有借位
+                    if (!hasCarry(num1, num2, '-')) {
+                        break;
+                    }
+                }
+            } while (attempts < maxAttempts);
+            
+            return {
+                question: `${num1} - ${num2} = ?`,
+                answer: answer,
+                operation: 'subtraction'
+            };
+        }
+        
+        // 生成乘法题目
+        function generateMultiplicationQuestion(difficulty) {
+            let num1, num2, answer;
+            const { numberRange } = userSettings;
+            
+            switch (difficulty) {
+                case 'easy':
+                    num1 = Math.floor(Math.random() * 10) + 1;
+                    num2 = Math.floor(Math.random() * 10) + 1;
+                    break;
+                case 'medium':
+                    num1 = Math.floor(Math.random() * Math.min(20, numberRange)) + 1;
+                    num2 = Math.floor(Math.random() * 10) + 1;
+                    break;
+                case 'hard':
+                    num1 = Math.floor(Math.random() * Math.min(100, numberRange)) + 1;
+                    num2 = Math.floor(Math.random() * 10) + 1;
+                    break;
+                default:
+                    num1 = Math.floor(Math.random() * 10) + 1;
+                    num2 = Math.floor(Math.random() * 10) + 1;
+            }
+            
+            answer = num1 * num2;
+            
+            return {
+                question: `${num1} × ${num2} = ?`,
+                answer: answer,
+                operation: 'multiplication'
+            };
+        }
+        
+        // 生成除法题目
+        function generateDivisionQuestion(difficulty) {
+            let num1, num2, answer;
+            const { numberRange } = userSettings;
+            
+            switch (difficulty) {
+                case 'easy':
+                    num2 = Math.floor(Math.random() * 10) + 1;
+                    answer = Math.floor(Math.random() * Math.min(10, Math.floor(numberRange / num2))) + 1;
+                    num1 = num2 * answer;
+                    break;
+                case 'medium':
+                    num2 = Math.floor(Math.random() * Math.min(20, numberRange)) + 1;
+                    answer = Math.floor(Math.random() * Math.min(10, Math.floor(numberRange / num2))) + 1;
+                    num1 = num2 * answer;
+                    break;
+                case 'hard':
+                    num2 = Math.floor(Math.random() * Math.min(100, numberRange)) + 1;
+                    answer = Math.floor(Math.random() * Math.min(10, Math.floor(numberRange / num2))) + 1;
+                    num1 = num2 * answer;
+                    break;
+                default:
+                    num2 = Math.floor(Math.random() * 10) + 1;
+                    answer = Math.floor(Math.random() * Math.min(10, Math.floor(numberRange / num2))) + 1;
+                    num1 = num2 * answer;
+            }
+            
+            return {
+                question: `${num1} ÷ ${num2} = ?`,
+                answer: answer,
+                operation: 'division'
+            };
+        }
+        
+        // 生成混合运算题目
+        function generateMixedQuestion(difficulty) {
+            const operations = ['addition', 'subtraction', 'multiplication', 'division'];
+            const operation = operations[Math.floor(Math.random() * operations.length)];
+            
+            switch (operation) {
+                case 'addition':
+                    return generateAdditionQuestion(difficulty);
+                case 'subtraction':
+                    return generateSubtractionQuestion(difficulty);
+                case 'multiplication':
+                    return generateMultiplicationQuestion(difficulty);
+                case 'division':
+                    return generateDivisionQuestion(difficulty);
+                default:
+                    return generateAdditionQuestion(difficulty);
+            }
+        }
+        
+        // 开始练习
+        function startPractice() {
+            // 收集用户设置
+            collectUserSettings();
+            
+            // 生成题目
+            generateQuestions();
+            
+            // 重置统计数据
+            currentQuestionIndex = 0;
+            correctAnswers = 0;
+            wrongAnswers = 0;
+            skippedQuestions = 0;
+            
+            // 开始计时
+            startTime = Date.now();
+            if (userSettings.enableTimer && userSettings.timeLimit > 0) {
+                timeLeft = userSettings.timeLimit;
+                startTimer();
+            } else {
+                timerDisplay.textContent = '无限制';
+            }
+            
+            // 显示第一个题目
+            showQuestion();
+            
+            // 显示练习页面
+            showSection(practiceSection);
+        }
+        
+        // 显示当前题目
+        function showQuestion() {
+            if (currentQuestionIndex < currentQuestions.length) {
+                const question = currentQuestions[currentQuestionIndex];
+                questionContainer.textContent = question.question;
+                answerInput.value = '';
+                answerInput.focus();
+                
+                // 更新进度
+                questionProgress.textContent = `${currentQuestionIndex + 1}/${currentQuestions.length}`;
+                const progressPercentage = ((currentQuestionIndex + 1) / currentQuestions.length) * 100;
+                progressBar.style.width = `${progressPercentage}%`;
+                
+                // 隐藏反馈区
+                feedbackArea.classList.add('hidden');
+                correctFeedback.classList.add('hidden');
+                wrongFeedback.classList.add('hidden');
+            } else {
+                // 所有题目已完成
+                finishPractice();
+            }
+        }
+        
+        // 开始计时器
+        function startTimer() {
+            timerInterval = setInterval(() => {
+                timeLeft--;
+                updateTimerDisplay();
+                
+                if (timeLeft <= 0) {
+                    stopTimer();
+                    finishPractice();
+                }
+            }, 1000);
+            
+            updateTimerDisplay();
+        }
+        
+        // 停止计时器
+        function stopTimer() {
+            if (timerInterval) {
+                clearInterval(timerInterval);
+                timerInterval = null;
+            }
+        }
+        
+        // 更新计时器显示
+        function updateTimerDisplay() {
+            const minutes = Math.floor(timeLeft / 60);
+            const seconds = timeLeft % 60;
+            timerDisplay.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        }
+        
+        // 检查答案
+        function checkAnswer() {
+            const userAnswer = parseInt(answerInput.value);
+            const currentQuestion = currentQuestions[currentQuestionIndex];
+            
+            if (isNaN(userAnswer)) {
+                // 输入为空或不是数字
+                answerInput.classList.add('border-danger');
+                answerInput.classList.add('animate-shake');
+                setTimeout(() => {
+                    answerInput.classList.remove('animate-shake');
+                }, 500);
+                return;
+            }
+            
+            // 显示反馈区
+            feedbackArea.classList.remove('hidden');
+            
+            if (userAnswer === currentQuestion.answer) {
+                // 回答正确
+                correctAnswers++;
+                correctFeedback.classList.remove('hidden');
+                wrongFeedback.classList.add('hidden');
+                
+                // 添加正确动画
+                questionContainer.classList.add('text-green-500');
+                questionContainer.classList.add('animate-pulse-short');
+                
+                setTimeout(() => {
+                    questionContainer.classList.remove('text-green-500');
+                    questionContainer.classList.remove('animate-pulse-short');
+                    currentQuestionIndex++;
+                    showQuestion();
+                }, 1500);
+            } else {
+                // 回答错误
+                wrongAnswers++;
+                wrongFeedback.classList.remove('hidden');
+                correctFeedback.classList.add('hidden');
+                correctAnswerSpan.textContent = currentQuestion.answer;
+                
+                // 添加错误动画
+                questionContainer.classList.add('text-red-500');
+                questionContainer.classList.add('animate-shake');
+                
+                // 添加到错题本
+                addToWrongQuestions(currentQuestion, userAnswer);
+                
+                setTimeout(() => {
+                    questionContainer.classList.remove('text-red-500');
+                    questionContainer.classList.remove('animate-shake');
+                    currentQuestionIndex++;
+                    showQuestion();
+                }, 2000);
+            }
+        }
+        
+        // 跳过题目
+        function skipQuestion() {
+            skippedQuestions++;
+            currentQuestionIndex++;
+            showQuestion();
+        }
+        
+        // 添加到错题本
+        function addToWrongQuestions(question, userAnswer) {
+            const wrongQuestion = {
+                question: question.question,
+                correctAnswer: question.answer,
+                userAnswer: userAnswer,
+                date: new Date().toISOString(),
+                operation: question.operation
+            };
+            
+            wrongQuestions.push(wrongQuestion);
+            localStorage.setItem('wrongQuestions', JSON.stringify(wrongQuestions));
+        }
+        
+        // 完成练习
+        function finishPractice() {
+            // 停止计时器
+            stopTimer();
+            
+            // 计算用时
+            endTime = Date.now();
+            const timeSpent = Math.floor((endTime - startTime) / 1000);
+            
+            // 计算正确率
+            const totalAnswered = correctAnswers + wrongAnswers;
+            const accuracyRate = totalAnswered > 0 ? Math.round((correctAnswers / totalAnswered) * 100) : 0;
+            
+            // 更新结果页面
+            accuracyRateSpan.textContent = `${accuracyRate}%`;
+            correctCountSpan.textContent = `${correctAnswers}/${currentQuestions.length}`;
+            timeSpentSpan.textContent = formatTime(timeSpent);
+            
+            // 检查是否有新成就
+            const newAchievement = checkNewAchievements(accuracyRate, correctAnswers, timeSpent);
+            
+            // 显示或隐藏成就获得提示
+            if (newAchievement) {
+                achievementNameSpan.textContent = newAchievement.name;
+                achievementDescriptionSpan.textContent = newAchievement.description;
+                achievementEarnedDiv.classList.remove('hidden');
+            } else {
+                achievementEarnedDiv.classList.add('hidden');
+            }
+            
+            // 显示或隐藏错题回顾
+            if (wrongAnswers > 0) {
+                wrongQuestionsReviewDiv.classList.remove('hidden');
+                generateWrongQuestionsReview();
+            } else {
+                wrongQuestionsReviewDiv.classList.add('hidden');
+            }
+            
+            // 更新错题本UI
+            updateWrongQuestionsUI();
+            
+            // 显示结果页面
+            showSection(resultSection);
+        }
+        
+        // 格式化时间
+        function formatTime(seconds) {
+            const minutes = Math.floor(seconds / 60);
+            const remainingSeconds = seconds % 60;
+            return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
+        }
+        
+        // 生成错题回顾
+        function generateWrongQuestionsReview() {
+            wrongQuestionsListDiv.innerHTML = '';
+            
+            // 获取本次练习的错题
+            const recentWrongQuestions = wrongQuestions.slice(-wrongAnswers);
+            
+            recentWrongQuestions.forEach((wrongQuestion, index) => {
+                const wrongQuestionElement = document.createElement('div');
+                wrongQuestionElement.className = 'bg-red-50 p-3 rounded-lg mb-2';
+                wrongQuestionElement.innerHTML = `
+                    <div class="flex justify-between items-center">
+                        <div class="font-bold">${wrongQuestion.question}</div>
+                    </div>
+                    <div class="mt-1">
+                        <p>你的答案: <span class="text-red-600 font-bold">${wrongQuestion.userAnswer}</span></p>
+                        <p>正确答案: <span class="text-green-600 font-bold">${wrongQuestion.correctAnswer}</span></p>
+                    </div>
+                `;
+                
+                wrongQuestionsListDiv.appendChild(wrongQuestionElement);
+            });
+        }
+        
+        // 检查新成就
+        function checkNewAchievements(accuracyRate, correctCount, timeSpent) {
+            const allAchievements = [
+                {
+                    id: 'first_practice',
+                    name: '数学新星',
+                    description: '首次完成10题以上的练习',
+                    condition: () => correctCount + wrongAnswers >= 10 && !hasAchievement('first_practice')
+                },
+                {
+                    id: 'perfect_score',
+                    name: '完美计算',
+                    description: '正确率达到100%',
+                    condition: () => accuracyRate === 100 && !hasAchievement('perfect_score')
+                },
+                {
+                    id: 'high_accuracy',
+                    name: '算术大师',
+                    description: '正确率达到90%以上',
+                    condition: () => accuracyRate >= 90 && !hasAchievement('high_accuracy')
+                },
+                {
+                    id: 'speed_demon',
+                    name: '速度之星',
+                    description: '平均每题用时少于5秒',
+                    condition: () => {
+                        const totalQuestions = correctCount + wrongAnswers;
+                        return totalQuestions > 0 && timeSpent / totalQuestions < 5 && !hasAchievement('speed_demon');
+                    }
+                },
+                {
+                    id: 'persistent',
+                    name: '坚持不懈',
+                    description: '完成50题以上的练习',
+                    condition: () => correctCount + wrongAnswers >= 50 && !hasAchievement('persistent')
+                }
+            ];
+            
+            for (const achievement of allAchievements) {
+                if (achievement.condition()) {
+                    addAchievement(achievement);
+                    return achievement;
+                }
+            }
+            
+            return null;
+        }
+        
+        // 检查是否已有成就
+        function hasAchievement(achievementId) {
+            return achievements.some(a => a.id === achievementId);
+        }
+        
+        // 添加成就
+        function addAchievement(achievement) {
+            const newAchievement = {
+                id: achievement.id,
+                name: achievement.name,
+                description: achievement.description,
+                date: new Date().toISOString()
+            };
+            
+            achievements.push(newAchievement);
+            localStorage.setItem('achievements', JSON.stringify(achievements));
+        }
+        
+        // 检查并更新成就
+        function checkAchievements() {
+            // 这里可以添加一些需要定期检查的成就条件
+        }
+        
+        // 更新成就UI
+        function updateAchievementsUI() {
+            earnedAchievementsDiv.innerHTML = '';
+            lockedAchievementsDiv.innerHTML = '';
+            
+            const allAchievements = [
+                {
+                    id: 'first_practice',
+                    name: '数学新星',
+                    description: '首次完成10题以上的练习'
+                },
+                {
+                    id: 'perfect_score',
+                    name: '完美计算',
+                    description: '正确率达到100%'
+                },
+                {
+                    id: 'high_accuracy',
+                    name: '算术大师',
+                    description: '正确率达到90%以上'
+                },
+                {
+                    id: 'speed_demon',
+                    name: '速度之星',
+                    description: '平均每题用时少于5秒'
+                },
+                {
+                    id: 'persistent',
+                    name: '坚持不懈',
+                    description: '完成50题以上的练习'
+                }
+            ];
+            
+            // 分离已获得和未获得的成就
+            const earned = [];
+            const locked = [];
+            
+            allAchievements.forEach(achievement => {
+                const earnedAchievement = achievements.find(a => a.id === achievement.id);
+                if (earnedAchievement) {
+                    earned.push({
+                        ...achievement,
+                        date: earnedAchievement.date
+                    });
+                } else {
+                    locked.push(achievement);
+                }
+            });
+            
+            // 显示已获得的成就
+            if (earned.length === 0) {
+                earnedAchievementsDiv.innerHTML = '<p class="text-center text-gray-500">还没有获得任何成就</p>';
+            } else {
+                earned.forEach(achievement => {
+                    const achievementElement = document.createElement('div');
+                    achievementElement.className = 'flex items-center bg-white p-3 rounded-lg shadow-sm mb-3';
+                    
+                    const date = new Date(achievement.date).toLocaleDateString();
+                    
+                    achievementElement.innerHTML = `
+                        <img src="https://p26-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/rc/pc/super_tool/7877d34c1b6042d783a1ee553fb0fb09~tplv-a9rns2rl98-image.image?lk3s=8e244e95&rcl=2026050420405471C4CCBCA99270498E57&rrcfp=f06b921b&x-expires=1780490488&x-signature=gc3XpUYq8aU%2FYDy%2FoLJ6eWcvk8Q%3D" alt="${achievement.name}" class="w-12 h-12 mr-4">
+                        <div>
+                            <h4 class="font-bold">${achievement.name}</h4>
+                            <p class="text-sm text-gray-600">${achievement.description}</p>
+                            <p class="text-xs text-gray-500">获得时间: ${date}</p>
+                        </div>
+                    `;
+                    
+                    earnedAchievementsDiv.appendChild(achievementElement);
+                });
+            }
+            
+            // 显示未获得的成就
+            if (locked.length === 0) {
+                lockedAchievementsDiv.innerHTML = '<p class="text-center text-gray-500">已获得所有成就！</p>';
+            } else {
+                locked.forEach(achievement => {
+                    const achievementElement = document.createElement('div');
+                    achievementElement.className = 'flex items-center bg-white p-3 rounded-lg shadow-sm mb-3 opacity-50';
+                    
+                    achievementElement.innerHTML = `
+                        <div class="w-12 h-12 mr-4 bg-gray-200 rounded-lg flex items-center justify-center">
+                            <i class="fa fa-lock text-xl text-gray-400"></i>
+                        </div>
+                        <div>
+                            <h4 class="font-bold">${achievement.name}</h4>
+                            <p class="text-sm text-gray-600">${achievement.description}</p>
+                        </div>
+                    `;
+                    
+                    lockedAchievementsDiv.appendChild(achievementElement);
+                });
+            }
+        }
+        
+        // 更新错题本UI
+        function updateWrongQuestionsUI() {
+            if (wrongQuestions.length === 0) {
+                noWrongQuestionsDiv.classList.remove('hidden');
+                wrongQuestionsContentDiv.classList.add('hidden');
+            } else {
+                noWrongQuestionsDiv.classList.add('hidden');
+                wrongQuestionsContentDiv.classList.remove('hidden');
+                
+                // 更新错题列表
+                wrongQuestionsListContainerDiv.innerHTML = '';
+                
+                // 只显示最近的10条错题
+                const recentWrongQuestions = wrongQuestions.slice(-10);
+                
+                recentWrongQuestions.forEach((wrongQuestion, index) => {
+                    const date = new Date(wrongQuestion.date).toLocaleString();
+                    
+                    const wrongQuestionElement = document.createElement('div');
+                    wrongQuestionElement.className = 'bg-red-50 p-4 rounded-lg';
+                    wrongQuestionElement.innerHTML = `
+                        <div class="flex justify-between items-center">
+                            <div class="text-xl font-bold">${wrongQuestion.question}</div>
+                            <div class="badge badge-danger">答错</div>
+                        </div>
+                        <div class="mt-2">
+                            <p>你的答案: <span class="text-red-600 font-bold">${wrongQuestion.userAnswer}</span></p>
+                            <p>正确答案: <span class="text-green-600 font-bold">${wrongQuestion.correctAnswer}</span></p>
+                        </div>
+                        <div class="mt-2 text-sm text-gray-500">
+                            日期: ${date}
+                        </div>
+                    `;
+                    
+                    wrongQuestionsListContainerDiv.appendChild(wrongQuestionElement);
+                });
+            }
+        }
+        
+        // 清空错题本
+        function clearWrongQuestions() {
+            if (confirm('确定要清空错题本吗？此操作不可恢复。')) {
+                wrongQuestions = [];
+                localStorage.setItem('wrongQuestions', JSON.stringify(wrongQuestions));
+                updateWrongQuestionsUI();
+            }
+        }
+        
+        // 检查是否有进位或借位
+        function hasCarry(num1, num2, operation) {
+            // 转换为字符串以便逐位比较
+            const num1Str = num1.toString().padStart(2, '0');
+            const num2Str = num2.toString().padStart(2, '0');
+            
+            if (operation === '+') {
+                // 检查加法是否有进位
+                const unitsDigit1 = parseInt(num1Str[num1Str.length - 1]);
+                const unitsDigit2 = parseInt(num2Str[num2Str.length - 1]);
+                return unitsDigit1 + unitsDigit2 >= 10;
+            } else if (operation === '-') {
+                // 检查减法是否有借位
+                const unitsDigit1 = parseInt(num1Str[num1Str.length - 1]);
+                const unitsDigit2 = parseInt(num2Str[num2Str.length - 1]);
+                return unitsDigit1 < unitsDigit2;
+            }
+            
+            return false;
+        }
+        
+        // 练习错题
+        function practiceWrongQuestions() {
+            if (wrongQuestions.length === 0) return;
+            
+            // 使用错题生成练习
+            currentQuestions = wrongQuestions.map(wrongQuestion => {
+                return {
+                    question: wrongQuestion.question,
+                    answer: wrongQuestion.correctAnswer,
+                    operation: wrongQuestion.operation || 'unknown'
+                };
+            });
+            
+            // 重置统计数据
+            currentQuestionIndex = 0;
+            correctAnswers = 0;
+            wrongAnswers = 0;
+            skippedQuestions = 0;
+            
+            // 开始计时
+            startTime = Date.now();
+            if (userSettings.enableTimer && userSettings.timeLimit > 0) {
+                timeLeft = userSettings.timeLimit;
+                startTimer();
+            } else {
+                timerDisplay.textContent = '无限制';
+            }
+            
+            // 显示第一个题目
+            showQuestion();
+            
+            // 显示练习页面
+            showSection(practiceSection);
+        }
+        
+        // 初始化应用
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>
